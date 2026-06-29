@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Seoul 26">
+  <meta name="theme-color" content="#f5f2f8">
+  <title>Seoul · July 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  <style>
+    :root {
+      --bg:      #f5f2f8;
+      --surface: #ede9f4;
+      --card:    #ffffff;
+      --border:  #e2ddef;
+      --text:    #2c2839;
+      --muted:   #9b95b0;
+      --muted2:  #c4bed4;
+      --pink:    #f0a8be;
+      --mint:    #96cdb5;
+      --lavender:#b0a0e0;
+      --peach:   #f0b894;
+      --sky:     #96bce0;
+      --butter:  #ecd894;
+      --lilac:   #d0a8e0;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+    body {
+      font-family:'Plus Jakarta Sans',sans-serif;
+      background:var(--bg); color:var(--text);
+      height:100dvh; overflow:hidden;
+      display:flex; flex-direction:column;
+      user-select:none;
+    }
+
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");
+      background-size:200px 200px; pointer-events:none; z-index:0;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      padding:calc(env(safe-area-inset-top) + 10px) 18px 10px;
+      background:rgba(245,242,248,.88);
+      border-bottom:1px solid var(--border);
+      backdrop-filter:blur(20px) saturate(1.4);
+      -webkit-backdrop-filter:blur(20px) saturate(1.4);
+      flex-shrink:0; position:relative; z-index:10;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .logo { font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; letter-spacing:2px; color:var(--text); }
+    .logo em { color:var(--lavender); font-style:normal; }
+    .pulse-dot { width:7px; height:7px; border-radius:50%; background:var(--mint); animation:pulse 2.5s ease-in-out infinite; display:inline-block; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.35;transform:scale(.8);} }
+
+    /* ── TABS ── */
+    .tabs {
+      display:flex; background:rgba(237,233,244,.95);
+      border-bottom:1px solid var(--border);
+      flex-shrink:0; position:relative; z-index:10;
+      overflow-x:auto; scrollbar-width:none;
+    }
+    .tabs::-webkit-scrollbar { display:none; }
+    .tab {
+      flex:1; min-width:44px; padding:9px 4px;
+      border:none; background:transparent;
+      font-family:'Plus Jakarta Sans',sans-serif;
+      font-size:8px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase;
+      color:var(--muted2); cursor:pointer;
+      display:flex; flex-direction:column; align-items:center; gap:3px;
+      border-bottom:2px solid transparent; margin-bottom:-1px;
+      transition:color .2s, border-color .2s;
+    }
+    .tab.active { color:var(--text); }
+    .tab-icon { font-size:15px; }
+
+    /* ── CONTENT + VIEWS ── */
+    .content { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; position:relative; z-index:1; }
+    .content::-webkit-scrollbar { display:none; }
+    .view { display:none; padding:14px 14px calc(env(safe-area-inset-bottom) + 28px); }
+    .view.active { display:block; }
+
+    /* ── CARD ── */
+    .card { background:var(--card); border:1px solid var(--border); border-radius:18px; box-shadow:0 2px 16px rgba(160,140,200,.1),0 1px 4px rgba(160,140,200,.06); padding:16px; margin-bottom:12px; }
+    .card-label { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+    .cl-lav    { color:#7660c2; }
+    .cl-mint   { color:#4a9e80; }
+    .cl-sky    { color:#4878b0; }
+    .cl-peach  { color:#c27840; }
+    .cl-pink   { color:#c2607e; }
+    .cl-butter { color:#9e8020; }
+    .cl-lilac  { color:#9060b8; }
+
+    /* ── STAT GRID ── */
+    .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+    .stat-card { background:var(--card); border:1px solid var(--border); border-radius:18px; box-shadow:0 2px 16px rgba(160,140,200,.1); padding:14px 13px; }
+    .stat-val { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:700; line-height:1; margin-bottom:4px; color:var(--lavender); }
+    .stat-key { font-size:9px; font-weight:700; letter-spacing:1.5px; color:var(--muted); }
+    .stat-sub { font-size:10px; color:var(--muted2); margin-top:3px; }
+
+    /* ── ROW ── */
+    .row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); }
+    .row:last-child { border-bottom:none; padding-bottom:0; }
+    .row:first-child { padding-top:0; }
+    .row-l { display:flex; flex-direction:column; gap:2px; }
+    .row-title { font-size:12px; font-weight:600; color:var(--text); }
+    .row-sub   { font-size:10px; color:var(--muted2); }
+    .row-val   { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; color:var(--lavender); white-space:nowrap; margin-left:8px; }
+
+    /* ── BADGES ── */
+    .badge { display:inline-flex; align-items:center; padding:3px 9px; border-radius:20px; font-size:9px; font-weight:700; letter-spacing:.5px; white-space:nowrap; }
+    .b-lav    { background:rgba(176,160,224,.18); color:#7660c2;  border:1px solid rgba(176,160,224,.45); }
+    .b-mint   { background:rgba(150,205,181,.18); color:#4a9e80;  border:1px solid rgba(150,205,181,.45); }
+    .b-sky    { background:rgba(150,188,224,.18); color:#4878b0;  border:1px solid rgba(150,188,224,.45); }
+    .b-peach  { background:rgba(240,184,148,.18); color:#c27840;  border:1px solid rgba(240,184,148,.45); }
+    .b-pink   { background:rgba(240,168,190,.18); color:#c2607e;  border:1px solid rgba(240,168,190,.45); }
+    .b-butter { background:rgba(236,216,148,.18); color:#9e8020;  border:1px solid rgba(236,216,148,.45); }
+    .b-lilac  { background:rgba(208,168,224,.18); color:#9060b8;  border:1px solid rgba(208,168,224,.45); }
+
+    /* ── SECTION SUBHEADER ── */
+    .sh { font-size:9px; font-weight:700; letter-spacing:2px; color:var(--muted); margin:16px 0 8px; }
+
+    /* ── COUNTDOWN ── */
+    .cd-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+    .cd-unit { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:14px 6px; text-align:center; }
+    .cd-val  { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1; color:var(--lavender); }
+    .cd-lbl  { font-size:8px; font-weight:700; letter-spacing:2px; color:var(--muted); margin-top:4px; }
+
+    /* ── DAY CARDS (Itinerary) ── */
+    .day-card { background:var(--card); border:1px solid var(--border); border-radius:18px; box-shadow:0 2px 16px rgba(160,140,200,.1),0 1px 4px rgba(160,140,200,.06); margin-bottom:12px; overflow:hidden; }
+    .day-head { padding:13px 16px 10px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+    .day-date  { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; }
+    .day-label { font-size:10px; color:var(--muted); margin-top:2px; }
+    .info-strip { padding:7px 16px; font-size:11px; font-weight:500; display:flex; align-items:center; gap:7px; border-bottom:1px solid var(--border); }
+    .info-strip:last-of-type { border-bottom:none; }
+    .hotel-bar  { background:rgba(176,160,224,.08); color:#7660c2; }
+    .gym-bar    { background:rgba(150,205,181,.12); color:#3a8065; border-left:3px solid var(--mint); }
+    .warn-bar   { background:rgba(236,216,148,.15); color:#7a6010; border-left:3px solid var(--butter); }
+    .hold-bar   { background:rgba(240,184,148,.12); color:#a05820; border-left:3px solid var(--peach); }
+    .flight-bar { background:rgba(176,160,224,.18); color:#5040a0; font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700; }
+    .slots { padding:12px 16px; display:flex; flex-direction:column; gap:10px; }
+    .slot-lbl { font-size:8.5px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted2); margin-bottom:5px; }
+    .acts { display:flex; flex-direction:column; gap:6px; }
+    .act { display:flex; align-items:flex-start; gap:8px; font-size:12px; line-height:1.45; }
+    .act-icon { font-size:12px; flex-shrink:0; margin-top:1px; }
+    .act-body { flex:1; }
+    .act-name { font-weight:600; display:block; font-size:12px; }
+    .act-note { font-size:10px; color:var(--muted); margin-top:1px; display:block; }
+    .act-warn { color:#c2607e; }
+    .tbd { border-bottom:1.5px dashed var(--muted2); padding-bottom:1px; font-size:12px; color:var(--muted); }
+    .sdiv { height:1px; background:var(--border); margin:2px 0; }
+    .itag { font-size:9px; font-weight:700; padding:2px 7px; border-radius:20px; margin-left:5px; }
+    .it-book { background:rgba(240,168,190,.2); color:#c2607e; border:1px solid rgba(240,168,190,.4); }
+    .it-time { background:rgba(150,205,181,.2); color:#3a8065; border:1px solid rgba(150,205,181,.4); }
+    .it-star { background:rgba(236,216,148,.2); color:#8a6a10; border:1px solid rgba(236,216,148,.4); }
+    .food-pick { background:var(--surface); border-radius:10px; padding:8px 10px; margin-top:5px; }
+    .food-pick-title { font-size:8px; font-weight:700; letter-spacing:1.5px; color:var(--muted); margin-bottom:5px; }
+    .food-opt { padding:3px 0; font-size:11px; color:var(--text); }
+    .food-opt span { color:var(--muted2); }
+    .food-opt.na { opacity:.4; text-decoration:line-through; }
+    .travel-row { display:flex; align-items:center; gap:8px; padding:3px 0; }
+    .travel-line { flex:1; height:1px; background:var(--border); }
+    .travel-lbl { font-size:9px; color:var(--muted); background:var(--surface); padding:2px 9px; border-radius:20px; border:1px solid var(--border); white-space:nowrap; }
+
+    /* ── WORKOUT ── */
+    .gym-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+    @media(max-width:480px) { .gym-grid { grid-template-columns:1fr; } }
+    .gym-info { background:var(--card); border:1px solid var(--border); border-radius:18px; box-shadow:0 2px 16px rgba(160,140,200,.1); padding:14px; }
+    .gym-name   { font-size:12px; font-weight:700; margin-bottom:2px; }
+    .gym-nights { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--muted2); margin-bottom:10px; }
+    .eq-row { display:flex; align-items:center; gap:7px; font-size:11px; padding:2px 0; }
+    .eq-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    .eq-yes { background:var(--mint); }
+    .eq-no  { background:var(--muted2); }
+    .gym-note { font-size:10px; color:var(--muted); margin-top:8px; padding-top:8px; border-top:1px solid var(--border); line-height:1.5; }
+    .bands-card { background:var(--card); border:1px solid rgba(150,205,181,.4); border-radius:18px; box-shadow:0 2px 16px rgba(150,205,181,.12); padding:14px 16px; margin-bottom:12px; display:flex; gap:12px; align-items:flex-start; }
+    .bands-verdict { font-size:12px; font-weight:700; color:#3a8065; margin-bottom:4px; }
+    .bands-reason  { font-size:11px; color:var(--muted); line-height:1.5; }
+    .sched-table { background:var(--card); border:1px solid var(--border); border-radius:18px; box-shadow:0 2px 16px rgba(160,140,200,.1); overflow:hidden; }
+    .sched-head { display:grid; grid-template-columns:36px 70px 72px 1fr; background:var(--surface); padding:9px 14px; font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); gap:8px; }
+    .sched-row  { display:grid; grid-template-columns:36px 70px 72px 1fr; padding:10px 14px; border-top:1px solid var(--border); font-size:11px; gap:8px; align-items:start; }
+    .sched-row:nth-child(even) { background:rgba(237,233,244,.4); }
+    .sched-d { font-family:'JetBrains Mono',monospace; font-weight:700; font-size:10px; color:var(--lavender); }
+    .sched-date { font-size:10px; color:var(--muted2); }
+    .sched-loc  { font-size:9.5px; color:var(--muted); margin-top:2px; }
+    .wf-badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:20px; font-size:8px; font-weight:700; white-space:nowrap; }
+    .wf-cardio  { background:rgba(150,188,224,.2); color:#4878b0; border:1px solid rgba(150,188,224,.4); }
+    .wf-stretch { background:rgba(150,205,181,.2); color:#3a8065; border:1px solid rgba(150,205,181,.4); }
+    .wf-golf    { background:rgba(236,216,148,.2); color:#9e8020; border:1px solid rgba(236,216,148,.4); }
+    .wf-combo   { background:rgba(208,168,224,.2); color:#9060b8; border:1px solid rgba(208,168,224,.4); }
+    .wf-rest    { background:rgba(176,160,224,.15); color:#7660c2; border:1px solid rgba(176,160,224,.35); }
+
+    /* ── PACK ── */
+    .laundry-card { background:rgba(236,216,148,.12); border:1px solid rgba(236,216,148,.4); border-radius:18px; padding:14px 16px; margin-bottom:12px; }
+    .pack-sec { background:var(--card); border:1px solid var(--border); border-radius:18px; box-shadow:0 2px 16px rgba(160,140,200,.1); margin-bottom:12px; overflow:hidden; }
+    .pack-head { padding:10px 16px; font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; }
+    .ph-workout    { background:rgba(150,188,224,.15); color:#4878b0; }
+    .ph-bottoms    { background:rgba(176,160,224,.15); color:#7660c2; }
+    .ph-bras       { background:rgba(240,168,190,.15); color:#c2607e; }
+    .ph-sleep      { background:rgba(208,168,224,.15); color:#9060b8; }
+    .ph-gym        { background:rgba(150,205,181,.15); color:#3a8065; }
+    .ph-clothes    { background:rgba(236,216,148,.15); color:#9e8020; }
+    .ph-evening    { background:rgba(240,184,148,.15); color:#c27840; }
+    .ph-shoes      { background:rgba(176,160,224,.12); color:#7660c2; }
+    .ph-meds       { background:rgba(240,168,190,.25); color:#a04050; }
+    .ph-toiletries { background:rgba(150,188,224,.12); color:#4878b0; }
+    .ph-electronics{ background:rgba(176,160,224,.12); color:#6050a8; }
+    .ph-docs       { background:rgba(150,205,181,.12); color:#3a7060; }
+    .ph-laundry    { background:rgba(236,216,148,.2);  color:#9e8020; }
+    .ph-misc       { background:rgba(196,190,212,.15); color:#6a6080; }
+    .pack-item { display:flex; align-items:flex-start; gap:10px; padding:10px 16px; border-top:1px solid var(--border); }
+    .pack-item input[type=checkbox] { width:16px; height:16px; flex-shrink:0; margin-top:2px; accent-color:var(--lavender); cursor:pointer; }
+    .pack-item label { flex:1; font-size:12px; cursor:pointer; line-height:1.4; }
+    .pi-note { font-size:10px; color:var(--muted2); display:block; margin-top:2px; }
+    .pack-item.checked label { text-decoration:line-through; color:var(--muted2); }
+    .pack-qty { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700; background:var(--surface); color:var(--lavender); padding:2px 7px; border-radius:20px; white-space:nowrap; flex-shrink:0; margin-top:3px; border:1px solid var(--border); }
+
+    /* ── EAT ── */
+    .eat-card { background:var(--card); border:1px solid var(--border); border-radius:18px; box-shadow:0 2px 16px rgba(160,140,200,.1); padding:14px 16px; margin-bottom:10px; }
+    .eat-top  { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:3px; }
+    .eat-name { font-size:13px; font-weight:700; }
+    .eat-meta { font-size:10px; color:var(--muted2); margin-bottom:8px; }
+    .eat-note { font-size:11.5px; color:var(--text); line-height:1.5; }
+    .eat-book { font-size:10px; color:#c2607e; font-weight:600; margin-top:6px; }
+
+    /* ── SHOP ── */
+    .shop-card { background:var(--card); border:1px solid var(--border); border-radius:18px; box-shadow:0 2px 16px rgba(160,140,200,.1); padding:14px 16px; margin-bottom:10px; }
+    .shop-name { font-size:13px; font-weight:700; margin-bottom:2px; }
+    .shop-area { font-size:10px; color:var(--muted2); margin-bottom:8px; }
+    .shop-note { font-size:11.5px; color:var(--text); line-height:1.5; }
+
+    /* ── OUTFITS ── */
+    .outfit-table { background:var(--card); border:1px solid var(--border); border-radius:18px; box-shadow:0 2px 16px rgba(160,140,200,.1); overflow:hidden; margin-bottom:12px; }
+    .outfit-row { padding:13px 16px; border-top:1px solid var(--border); }
+    .outfit-row:first-child { border-top:none; }
+    .outfit-row:nth-child(even) { background:rgba(237,233,244,.35); }
+    .outfit-dr { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+    .outfit-date { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; }
+    .outfit-daynum { font-size:10px; color:var(--muted); margin-left:auto; }
+    .outfit-cols { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .oc-label { font-size:8px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted2); margin-bottom:4px; }
+    .oc-text  { font-size:11px; color:var(--text); line-height:1.4; }
+
+    /* ── CHECKLIST ── */
+    .cl-card { background:var(--card); border:1px solid var(--border); border-radius:18px; box-shadow:0 2px 16px rgba(160,140,200,.1); margin-bottom:12px; overflow:hidden; }
+    .cl-head { padding:12px 16px; font-size:11px; font-weight:700; border-bottom:1px solid var(--border); }
+    .cl-item { display:flex; align-items:flex-start; gap:10px; padding:11px 16px; border-top:1px solid var(--border); }
+    .cl-item:first-of-type { border-top:none; }
+    .cl-item input[type=checkbox] { width:16px; height:16px; flex-shrink:0; margin-top:2px; accent-color:var(--mint); cursor:pointer; }
+    .cl-item label { flex:1; font-size:12px; cursor:pointer; line-height:1.45; }
+    .cl-item.checked label strong { text-decoration:line-through; color:var(--muted2); }
+    .cl-note { font-size:10px; color:var(--muted2); margin-top:2px; display:block; }
+    .prio { display:inline-flex; align-items:center; padding:2px 8px; border-radius:20px; font-size:8.5px; font-weight:700; white-space:nowrap; flex-shrink:0; margin-top:2px; }
+    .prio-now  { background:rgba(240,168,190,.2); color:#c2607e; border:1px solid rgba(240,168,190,.45); }
+    .prio-soon { background:rgba(236,216,148,.2); color:#9e8020; border:1px solid rgba(236,216,148,.4); }
+    .prio-trip { background:rgba(150,188,224,.2); color:#4878b0; border:1px solid rgba(150,188,224,.4); }
+    /* ── FOOD LOG ── */
+    .food-log { border-top:1px solid var(--border); margin-top:12px; padding-top:10px; }
+    .fl-toggle { background:none; border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:10px; font-weight:700; color:var(--muted); cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:.5px; }
+    .fl-form { display:none; margin-top:10px; }
+    .fl-form.open { display:block; }
+    .fl-row { display:flex; gap:8px; margin-bottom:8px; }
+    .fl-select { flex:1; border:1px solid var(--border); border-radius:12px; padding:7px 10px; font-size:11px; background:var(--surface); color:var(--text); font-family:'Plus Jakarta Sans',sans-serif; -webkit-appearance:none; appearance:none; }
+    .fl-rv-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+    .fl-rv-lbl { font-size:9px; font-weight:700; letter-spacing:1px; color:var(--muted); }
+    .fl-rv-btns { display:flex; gap:5px; }
+    .fl-rv { border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:10px; font-weight:600; background:var(--surface); color:var(--muted); cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; transition:all .15s; }
+    .fl-rv.active { background:rgba(176,160,224,.2); color:#7660c2; border-color:rgba(176,160,224,.5); }
+    .fl-notes { width:100%; border:1px solid var(--border); border-radius:12px; padding:8px 10px; font-size:11px; background:var(--surface); color:var(--text); font-family:'Plus Jakarta Sans',sans-serif; resize:none; margin-bottom:8px; box-sizing:border-box; }
+    .fl-save-btn { width:100%; background:var(--lavender); border:none; border-radius:20px; padding:9px; font-size:11px; font-weight:700; color:#fff; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; }
+    .fl-visited { display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin-bottom:8px; }
+    .fl-vis-badge { background:rgba(150,205,181,.18); color:#3a8065; border:1px solid rgba(150,205,181,.4); border-radius:20px; padding:3px 9px; font-size:9px; font-weight:700; }
+    .fl-vis-rv { font-size:10px; color:var(--muted); }
+    .fl-vis-note { font-size:10px; color:var(--muted2); width:100%; font-style:italic; }
+    /* ── EXPORT ── */
+    .export-wrap { margin-bottom:14px; }
+    .export-btn { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:12px; font-size:11px; font-weight:700; color:var(--muted); cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:.5px; }
+    .export-note { font-size:9px; color:var(--muted2); text-align:center; margin-top:5px; letter-spacing:.3px; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">SEOUL<em>·</em>26</div>
+  <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);font-weight:600;">
+    <div class="pulse-dot"></div>
+    <span id="topbar-clock">SGT</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('itinerary')" data-color="var(--lavender)">
+    <span class="tab-icon">🗓</span>DAYS
+  </button>
+  <button class="tab" onclick="switchTab('workout')" data-color="var(--mint)">
+    <span class="tab-icon">💪</span>GYM
+  </button>
+  <button class="tab" onclick="switchTab('pack')" data-color="var(--sky)">
+    <span class="tab-icon">🎒</span>PACK
+  </button>
+  <button class="tab" onclick="switchTab('eat')" data-color="var(--peach)">
+    <span class="tab-icon">🍽️</span>EAT
+  </button>
+  <button class="tab" onclick="switchTab('shop')" data-color="var(--pink)">
+    <span class="tab-icon">🛍️</span>SHOP
+  </button>
+  <button class="tab" onclick="switchTab('outfits')" data-color="var(--lilac)">
+    <span class="tab-icon">👗</span>FIT
+  </button>
+  <button class="tab" onclick="switchTab('checklist')" data-color="var(--butter)">
+    <span class="tab-icon">✅</span>LIST
+  </button>
+</div>
+
+<div class="content">
+
+<!-- ═══════════ ITINERARY ═══════════ -->
+<div id="view-itinerary" class="view active">
+
+  <p class="sh">DEPARTURE COUNTDOWN</p>
+  <div class="cd-grid">
+    <div class="cd-unit"><div class="cd-val" id="cd-days">--</div><div class="cd-lbl">DAYS</div></div>
+    <div class="cd-unit"><div class="cd-val" id="cd-hrs">--</div><div class="cd-lbl">HOURS</div></div>
+    <div class="cd-unit"><div class="cd-val" id="cd-mins">--</div><div class="cd-lbl">MINS</div></div>
+  </div>
+
+  <p class="sh">FLIGHTS</p>
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-val">SQ600</div>
+      <div class="stat-key">SIN → ICN · FRI 3 JUL</div>
+      <div class="stat-sub">08:10 SGT → 14:30 KST · Business</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">SQ601</div>
+      <div class="stat-key">ICN → SIN · SUN 12 JUL</div>
+      <div class="stat-sub">15:45 KST → 22:00 SGT · Business</div>
+    </div>
+  </div>
+
+  <p class="sh">HOTELS</p>
+  <div class="card">
+    <div class="row">
+      <div class="row-l"><div class="row-title">Four Points by Sheraton, Myeongdong</div><div class="row-sub">Marriott · 2 Nights · Conf 90163650</div></div>
+      <div class="row-val">3–5 Jul</div>
+    </div>
+    <div class="row">
+      <div class="row-l"><div class="row-title">Andaz Seoul Gangnam</div><div class="row-sub">Hyatt Globalist · 5 Nights · Breakfast incl.</div></div>
+      <div class="row-val">5–10 Jul</div>
+    </div>
+    <div class="row">
+      <div class="row-l"><div class="row-title">Four Points by Sheraton, Myeongdong</div><div class="row-sub">Marriott · 2 Nights · Conf 90165380</div></div>
+      <div class="row-val">10–12 Jul</div>
+    </div>
+  </div>
+
+  <p class="sh">DAY BY DAY</p>
+
+  <!-- DAY 1 -->
+  <div class="day-card">
+    <div class="day-head" style="background:rgba(176,160,224,.08);">
+      <div><div class="day-date">Fri 3 Jul</div><div class="day-label">Arrival</div></div>
+      <span class="badge b-lav">✈️ FLY</span>
+    </div>
+    <div class="info-strip flight-bar">SQ600 · SIN 08:10 → ICN 14:30 KST</div>
+    <div class="info-strip hotel-bar">🏨 Four Points Myeongdong — Check-in</div>
+    <div class="info-strip gym-bar">💪 Rest — 15 min arrival stretch only</div>
+    <div class="slots">
+      <div><div class="slot-lbl">Afternoon</div><div class="acts">
+        <div class="act"><span class="act-icon">✅</span><div class="act-body"><span class="act-name">Arrive ICN <span class="itag it-time">14:30 KST</span></span></div></div>
+        <div class="travel-row"><div class="travel-line"></div><div class="travel-lbl">🚗 Pelago airport transfer · ICN → hotel</div><div class="travel-line"></div></div>
+        <div class="act"><span class="act-icon">🏨</span><div class="act-body"><span class="act-name">Check in Four Points <span class="itag it-time">~16:00</span></span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Evening</div><div class="acts">
+        <div class="act"><span class="act-icon">🧘</span><div class="act-body"><span class="act-name">15 min stretch</span><span class="act-note">Hips + shoulders + back · in room</span></div></div>
+        <div class="act"><span class="act-icon">🍽️</span><div class="act-body"><span class="tbd">Easy dinner near hotel</span></div></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- DAY 2 -->
+  <div class="day-card">
+    <div class="day-head" style="background:rgba(150,188,224,.08);">
+      <div><div class="day-date">Sat 4 Jul</div><div class="day-label">Artisan Clinic · Laundry</div></div>
+      <span class="badge b-sky">💉 CLINIC</span>
+    </div>
+    <div class="info-strip hotel-bar">🏨 Four Points Myeongdong</div>
+    <div class="info-strip warn-bar">💉 Artisan Clinic Cheongdam · 09:30 · confirm no gym before treatment</div>
+    <div class="info-strip gym-bar">💪 Cardio 30 min — afternoon after clinic · laundry today</div>
+    <div class="slots">
+      <div><div class="slot-lbl">09:30 — Cheongdam</div><div class="acts">
+        <div class="act"><span class="act-icon">💉</span><div class="act-body"><span class="act-name">Artisan Clinic <span class="itag it-time">09:30</span></span><span class="act-note">Cheongdam · ~20 min from Four Points · allow 1.5–2 hrs</span></div></div>
+        <div class="travel-row"><div class="travel-line"></div><div class="travel-lbl">🚗 Grab · Myeongdong → Cheongdam · ~20 min</div><div class="travel-line"></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Lunch</div><div class="acts">
+        <div class="act"><span class="act-icon">🍗</span><div class="act-body"><span class="act-name">Kkanbu Chicken Myeongdong</span><span class="act-note">Steps from Four Points · opens 12:00 · ₩10,000–20,000</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Afternoon</div><div class="acts">
+        <div class="act"><span class="act-icon">🏃</span><div class="act-body"><span class="act-name">Hotel gym — cardio 30 min</span><span class="act-note">After clinic · check with clinic if exercise is OK post-treatment</span></div></div>
+        <div class="act"><span class="act-icon">🧺</span><div class="act-body"><span class="act-name">Laundry</span><span class="act-note">Do today — clean sets ready for Andaz 5-night stretch</span></div></div>
+        <div class="act"><span class="act-icon">💄</span><div class="act-body"><span class="act-name">Olive Young Myeongdong</span><span class="act-note">Flagship · 3 floors · open till 23:00 · steps from hotel</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Evening</div><div class="acts">
+        <div class="act"><span class="act-icon">🍽️</span><div class="act-body"><span class="tbd">Dinner — Myeongdong</span></div></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- DAY 3 -->
+  <div class="day-card">
+    <div class="day-head" style="background:rgba(208,168,224,.1);">
+      <div><div class="day-date">Sun 5 Jul</div><div class="day-label">Move to Andaz + Seongsu</div></div>
+      <span class="badge b-lilac">🚗 MOVE</span>
+    </div>
+    <div class="info-strip hotel-bar">🏨 Check out Four Points (16:00) → Check in Andaz (15:00)</div>
+    <div class="info-strip gym-bar">💪 Golf mobility 30 min — resistance bands in-room (before checkout)</div>
+    <div class="slots">
+      <div><div class="slot-lbl">Early Morning — Four Points</div><div class="acts">
+        <div class="act"><span class="act-icon">🏌️</span><div class="act-body"><span class="act-name">Golf mobility — resistance bands 30 min</span><span class="act-note">Hip rotation · glute activation · trail arm · in room before checkout</span></div></div>
+        <div class="act"><span class="act-icon">🧳</span><div class="act-body"><span class="act-name">Check out Four Points</span><span class="act-note">Grab to Dosan · ~25 min</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">08:00 — Dosan (en route to Andaz)</div><div class="acts">
+        <div class="act"><span class="act-icon">🥯</span><div class="act-body"><span class="act-name">London Bagel Museum Dosan <span class="itag it-star">⭐ #1</span></span><span class="act-note">Go 8am — queue substantial by 10am · a few min from Andaz · Potato Cheese ⭐ · Truffle Butter · Spring Onion Pretzel · Mushroom Soup · Cream cheese sampler</span></div></div>
+        <div class="act"><span class="act-icon">🧳</span><div class="act-body"><span class="act-name">Drop bags at Andaz → Seongsu</span><span class="act-note">Check-in only from 15:00 · drop bags at bell desk · head to Seongsu</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Afternoon — Seongsu</div><div class="acts">
+        <div class="act"><span class="act-icon">🏭</span><div class="act-body"><span class="act-name">Seongsu-dong</span><span class="act-note">Cafes · pop-up shops · Alice's pick</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Evening</div><div class="acts">
+        <div class="act"><span class="act-icon">🍽️</span><div class="act-body"><span class="tbd">Dinner</span></div></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- DAY 4 -->
+  <div class="day-card">
+    <div class="day-head" style="background:rgba(150,205,181,.08);">
+      <div><div class="day-date">Mon 6 Jul</div><div class="day-label">Work Day</div></div>
+      <span class="badge b-mint">💻 WFH</span>
+    </div>
+    <div class="info-strip hotel-bar">🏨 Andaz Seoul Gangnam</div>
+    <div class="info-strip warn-bar">💻 Remote work 09:00–17:00</div>
+    <div class="info-strip gym-bar">💪 Cardio 30 min — Andaz gym</div>
+    <div class="slots">
+      <div><div class="slot-lbl">Before Work</div><div class="acts">
+        <div class="act"><span class="act-icon">🏃</span><div class="act-body"><span class="act-name">Andaz gym — cardio 30 min</span><span class="act-note">Treadmill or bike · Andaz gym B2</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">09:00–17:00</div><div class="acts">
+        <div class="act"><span class="act-icon">💻</span><div class="act-body"><span class="act-name">Remote work from Andaz</span><span class="act-note">Room or Globalist lounge</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Lunch</div><div class="acts">
+        <div class="act"><span class="act-icon">🍚</span><div class="act-body"><span class="act-name">Jikang Korean Restaurant</span><span class="act-note">⭐ 4.9 · Apgujeong · ~10 min walk · soy marinated crab · braised beef · traditional Korean (Daewoo closed Mon)</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Evening</div><div class="acts">
+        <div class="act"><span class="act-icon">🍽️</span><div class="act-body"><span class="act-name">Dosan Butchers</span><span class="act-note">Premium dry-aged beef · Apgujeong · ~5 min · walk-in</span></div></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- DAY 5 -->
+  <div class="day-card">
+    <div class="day-head" style="background:rgba(236,216,148,.1);">
+      <div><div class="day-date">Tue 7 Jul</div><div class="day-label">Work Day</div></div>
+      <span class="badge b-mint">💻 WFH</span>
+    </div>
+    <div class="info-strip hotel-bar">🏨 Andaz Seoul Gangnam</div>
+    <div class="info-strip warn-bar">💻 Remote work 09:00–17:00</div>
+    <div class="info-strip gym-bar">💪 Full stretch 30 min — Andaz Pilates room (B2)</div>
+    <div class="slots">
+      <div><div class="slot-lbl">Before Work</div><div class="acts">
+        <div class="act"><span class="act-icon">🧘</span><div class="act-body"><span class="act-name">Pilates room — full stretch 30 min</span><span class="act-note">Hip flexors · thoracic rotation · recovery day</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">09:00–17:00</div><div class="acts">
+        <div class="act"><span class="act-icon">💻</span><div class="act-body"><span class="act-name">Remote work from Andaz</span><span class="act-note">Room or Globalist lounge</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Lunch</div><div class="acts">
+        <div class="act"><span class="act-icon">🍲</span><div class="act-body"><span class="act-name">Daewoo Budaejjigae</span><span class="act-note">⭐ 4.3 · Teheran-ro, Gangnam · walkable · opens 11:00 · army stew</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Evening</div><div class="acts">
+        <div class="act"><span class="act-icon">🍽️</span><div class="act-body"><span class="tbd">Dinner — Gangnam area</span></div></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- DAY 6 -->
+  <div class="day-card">
+    <div class="day-head" style="background:rgba(240,184,148,.1);">
+      <div><div class="day-date">Wed 8 Jul</div><div class="day-label">Work + Soyoung HOLD</div></div>
+      <span class="badge b-peach">🍽️ HOLD</span>
+    </div>
+    <div class="info-strip hold-bar">🍽️ HOLD — Soyoung dinner (Wed 8 OR Thu 9) · confirm &amp; book</div>
+    <div class="info-strip hotel-bar">🏨 Andaz Seoul Gangnam</div>
+    <div class="info-strip warn-bar">💻 Remote work 09:00–17:00</div>
+    <div class="info-strip gym-bar">💪 Golf movement 30 min — Andaz Pilates room + bands</div>
+    <div class="slots">
+      <div><div class="slot-lbl">Before Work</div><div class="acts">
+        <div class="act"><span class="act-icon">🏌️</span><div class="act-body"><span class="act-name">Pilates room — golf movement 30 min</span><span class="act-note">Hip rotation · shoulder turn · trail arm · resistance bands</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">09:00–17:00</div><div class="acts">
+        <div class="act"><span class="act-icon">💻</span><div class="act-body"><span class="act-name">Remote work from Andaz</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Lunch</div><div class="acts">
+        <div class="act"><span class="act-icon">🍚</span><div class="act-body"><span class="act-name">Jikang Korean Restaurant</span><span class="act-note">⭐ 4.9 · Apgujeong · ~10 min walk · soy marinated crab · braised beef</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Evening — HOLD</div><div class="acts">
+        <div class="act"><span class="act-icon">🍽️</span><div class="act-body"><span class="act-name">HOLD — Dinner with Soyoung</span><span class="act-note act-warn">⚠ Confirm night (Wed 8 or Thu 9) + restaurant</span></div></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- DAY 7 -->
+  <div class="day-card">
+    <div class="day-head" style="background:rgba(240,184,148,.1);">
+      <div><div class="day-date">Thu 9 Jul</div><div class="day-label">Work + Soyoung HOLD</div></div>
+      <span class="badge b-peach">🍽️ HOLD</span>
+    </div>
+    <div class="info-strip hold-bar">🍽️ HOLD — Soyoung dinner (Wed 8 OR Thu 9) · confirm &amp; book</div>
+    <div class="info-strip hotel-bar">🏨 Andaz Seoul Gangnam</div>
+    <div class="info-strip warn-bar">💻 Remote work 09:00–17:00</div>
+    <div class="info-strip gym-bar">💪 Stretch 30 min — Andaz Pilates room</div>
+    <div class="slots">
+      <div><div class="slot-lbl">Before Work</div><div class="acts">
+        <div class="act"><span class="act-icon">🧘</span><div class="act-body"><span class="act-name">Pilates room — stretch 30 min</span><span class="act-note">Recovery · lighter session ahead of Soyoung dinner</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">09:00–17:00</div><div class="acts">
+        <div class="act"><span class="act-icon">💻</span><div class="act-body"><span class="act-name">Remote work from Andaz</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Lunch</div><div class="acts">
+        <div class="act"><span class="act-icon">🍲</span><div class="act-body"><span class="act-name">Daewoo Budaejjigae</span><span class="act-note">⭐ 4.3 · Teheran-ro, Gangnam · walkable · opens 11:00 · army stew</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Evening — HOLD</div><div class="acts">
+        <div class="act"><span class="act-icon">🍽️</span><div class="act-body"><span class="act-name">HOLD — Dinner with Soyoung</span><span class="act-note act-warn">⚠ Confirm night (Wed 8 or Thu 9) + restaurant</span></div></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- DAY 8 -->
+  <div class="day-card">
+    <div class="day-head" style="background:rgba(208,168,224,.1);">
+      <div><div class="day-date">Fri 10 Jul</div><div class="day-label">Move to Four Points + WFH</div></div>
+      <span class="badge b-lilac">🚗 MOVE</span>
+    </div>
+    <div class="info-strip hotel-bar">🏨 Check out Andaz (16:00) → Four Points Myeongdong · Conf 90165380</div>
+    <div class="info-strip warn-bar">✅ 4pm late checkout confirmed at both hotels · WFH from Andaz comfortably until move</div>
+    <div class="info-strip gym-bar">💪 Golf mobility + stretch 30 min — Andaz Pilates room (final session)</div>
+    <div class="slots">
+      <div><div class="slot-lbl">Morning — Andaz</div><div class="acts">
+        <div class="act"><span class="act-icon">🏌️</span><div class="act-body"><span class="act-name">Pilates room — golf mobility + stretch 30 min</span><span class="act-note">Last Andaz gym session · hip mobility + swing prep + back stretch</span></div></div>
+        <div class="act"><span class="act-icon">💻</span><div class="act-body"><span class="act-name">WFH from Andaz lounge</span><span class="act-note">Until checkout</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Midday — Move</div><div class="acts">
+        <div class="act"><span class="act-icon">🧳</span><div class="act-body"><span class="act-name">Check out Andaz → Four Points Myeongdong</span><span class="act-note">Grab · ~20 min · Myeongdong</span></div></div>
+        <div class="act"><span class="act-icon">🍗</span><div class="act-body"><span class="act-name">Lunch — Kkanbu Chicken Myeongdong</span><span class="act-note">Steps from Four Points · opens 12:00</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Afternoon + Evening</div><div class="acts">
+        <div class="act"><span class="act-icon">💻</span><div class="act-body"><span class="act-name">WFH from Four Points</span><span class="act-note">Complete hours from new hotel</span></div></div>
+        <div class="act"><span class="act-icon">🍽️</span><div class="act-body"><span class="tbd">Dinner — Myeongdong area</span></div></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- DAY 9 -->
+  <div class="day-card">
+    <div class="day-head" style="background:rgba(150,188,224,.08);">
+      <div><div class="day-date">Sat 11 Jul</div><div class="day-label">Last Full Day</div></div>
+      <span class="badge b-sky">🛍️ LAST DAY</span>
+    </div>
+    <div class="info-strip hotel-bar">🏨 Four Points Myeongdong</div>
+    <div class="info-strip gym-bar">💪 Cardio 30 min — Four Points gym</div>
+    <div class="slots">
+      <div><div class="slot-lbl">Morning</div><div class="acts">
+        <div class="act"><span class="act-icon">🏃</span><div class="act-body"><span class="act-name">Four Points gym — cardio 30 min</span><span class="act-note">Treadmill or elliptical · final workout</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Day</div><div class="acts">
+        <div class="act"><span class="act-icon">🍗</span><div class="act-body"><span class="act-name">Lunch — Kkanbu Chicken Myeongdong</span><span class="act-note">Steps from Four Points · opens 12:00 · last chance</span></div></div>
+        <div class="act"><span class="act-icon">🛍️</span><div class="act-body"><span class="act-name">Lotte Duty Free Myeongdong</span><span class="act-note">Open till 21:00 · passport + boarding pass · collect at ICN</span></div></div>
+        <div class="act"><span class="act-icon">🛒</span><div class="act-body"><span class="act-name">Lotte Mart snack run</span><span class="act-note">Honey butter chips · Pepero · Maxim coffee · Choco Heim · banana milk · dried squid</span></div></div>
+        <div class="act"><span class="act-icon">💄</span><div class="act-body"><span class="act-name">Olive Young last run</span><span class="act-note">Open till 23:00</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Evening</div><div class="acts">
+        <div class="act"><span class="act-icon">🍽️</span><div class="act-body"><span class="tbd">Farewell dinner</span></div></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- DAY 10 -->
+  <div class="day-card">
+    <div class="day-head" style="background:rgba(176,160,224,.08);">
+      <div><div class="day-date">Sun 12 Jul</div><div class="day-label">Departure</div></div>
+      <span class="badge b-lav">✈️ FLY HOME</span>
+    </div>
+    <div class="info-strip flight-bar">SQ601 · ICN 15:45 KST → SIN 22:00 SGT</div>
+    <div class="info-strip hotel-bar">🏨 Check out Four Points by 16:00</div>
+    <div class="info-strip warn-bar">⏰ Leave hotel ~13:00 · Taxi to ICN T2 · ~60 min · aim T2 by 14:00 · boarding ~15:20</div>
+    <div class="info-strip gym-bar">💪 15 min pre-flight stretch — hip + back + neck in room</div>
+    <div class="slots">
+      <div><div class="slot-lbl">Morning</div><div class="acts">
+        <div class="act"><span class="act-icon">🧘</span><div class="act-body"><span class="act-name">Pre-flight stretch 15 min</span><span class="act-note">Hip + back + neck · in room before checkout</span></div></div>
+        <div class="act"><span class="act-icon">✅</span><div class="act-body"><span class="act-name">Check out by 12:00</span></div></div>
+      </div></div>
+      <div class="sdiv"></div>
+      <div><div class="slot-lbl">Departure</div><div class="acts">
+        <div class="travel-row"><div class="travel-line"></div><div class="travel-lbl">🚕 Taxi · hotel → ICN T2 · ~60 min · depart ~13:00</div><div class="travel-line"></div></div>
+        <div class="act"><span class="act-icon">✅</span><div class="act-body"><span class="act-name">SQ SilverKris Lounge ICN</span><span class="act-note">Arrive ~13:30 · boarding ~15:20</span></div></div>
+        <div class="act"><span class="act-icon">✈️</span><div class="act-body"><span class="act-name">SQ601 departs <span class="itag it-time">15:45 KST</span></span><span class="act-note">Arrives SIN 22:00 SGT</span></div></div>
+      </div></div>
+    </div>
+  </div>
+
+</div><!-- /itinerary -->
+
+
+<!-- ═══════════ WORKOUT ═══════════ -->
+<div id="view-workout" class="view">
+
+  <p class="sh">HOTEL GYMS</p>
+  <div class="gym-grid">
+    <div class="gym-info">
+      <div class="gym-name">Four Points Myeongdong</div>
+      <div class="gym-nights">3–5 Jul + 10–12 Jul</div>
+      <div class="eq-row"><div class="eq-dot eq-yes"></div><span>Treadmill · elliptical · bike</span></div>
+      <div class="eq-row"><div class="eq-dot eq-yes"></div><span>Free weights</span></div>
+      <div class="eq-row"><div class="eq-dot eq-no"></div><span>No Pilates / mat room</span></div>
+      <div class="eq-row"><div class="eq-dot eq-no"></div><span>No pool or sauna</span></div>
+      <div class="gym-note">Basic cardio only. Golf mobility days here → resistance bands in room.</div>
+    </div>
+    <div class="gym-info">
+      <div class="gym-name">Andaz Seoul Gangnam</div>
+      <div class="gym-nights">5–10 Jul · 06:00–22:00</div>
+      <div class="eq-row"><div class="eq-dot eq-yes"></div><span>Cardio machines (treadmill · bike · elliptical)</span></div>
+      <div class="eq-row"><div class="eq-dot eq-yes"></div><span>Weights</span></div>
+      <div class="eq-row"><div class="eq-dot eq-yes"></div><span>Dedicated Pilates room</span></div>
+      <div class="eq-row"><div class="eq-dot eq-yes"></div><span>Jacuzzi · sauna · steam</span></div>
+      <div class="gym-note">Full facility. Pilates room ideal for golf movement and stretch sessions. Cardio on Mon 6 — gym machines only.</div>
+    </div>
+  </div>
+
+  <div class="bands-card">
+    <div style="font-size:24px;flex-shrink:0;">🪢</div>
+    <div>
+      <div class="bands-verdict">YES — bring resistance bands</div>
+      <div class="bands-reason">Four Points has no mat area. Andaz Pilates room has mats but no bands. Needed for golf hip activation, glute work, and rotation drills at both hotels. Light and packable, goes in carry-on.</div>
+    </div>
+  </div>
+
+  <p class="sh">10-DAY SCHEDULE</p>
+  <div class="sched-table">
+    <div class="sched-head"><span>DAY</span><span>DATE</span><span>TYPE</span><span>SESSION · LOCATION</span></div>
+    <div class="sched-row"><span class="sched-d">D1</span><span class="sched-date">Fri 3 Jul</span><span><span class="wf-badge wf-rest">Rest</span></span><span>15 min arrival stretch — hips · shoulders · back<br><span class="sched-loc">In room (Four Points)</span></span></div>
+    <div class="sched-row"><span class="sched-d">D2</span><span class="sched-date">Sat 4 Jul</span><span><span class="wf-badge wf-cardio">Cardio</span></span><span>Treadmill or elliptical · 30 min moderate<br><span class="sched-loc">Four Points gym</span></span></div>
+    <div class="sched-row"><span class="sched-d">D3</span><span class="sched-date">Sun 5 Jul</span><span><span class="wf-badge wf-golf">Golf</span></span><span>Resistance bands — hip rotation · glute · trail arm · 30 min<br><span class="sched-loc">In room (before checkout)</span></span></div>
+    <div class="sched-row"><span class="sched-d">D4</span><span class="sched-date">Mon 6 Jul</span><span><span class="wf-badge wf-cardio">Cardio</span></span><span>Treadmill, bike, or pool · 30 min<br><span class="sched-loc">Andaz gym / pool</span></span></div>
+    <div class="sched-row"><span class="sched-d">D5</span><span class="sched-date">Tue 7 Jul</span><span><span class="wf-badge wf-stretch">Stretch</span></span><span>Full body stretch + yoga flow · recovery · 30 min<br><span class="sched-loc">Andaz Pilates room</span></span></div>
+    <div class="sched-row"><span class="sched-d">D6</span><span class="sched-date">Wed 8 Jul</span><span><span class="wf-badge wf-golf">Golf</span></span><span>Hip rotation · shoulder turn · bands · 30 min<br><span class="sched-loc">Andaz Pilates room</span></span></div>
+    <div class="sched-row"><span class="sched-d">D7</span><span class="sched-date">Thu 9 Jul</span><span><span class="wf-badge wf-stretch">Stretch</span></span><span>Full stretch 30 min · recovery · lighter ahead of Soyoung dinner<br><span class="sched-loc">Andaz Pilates room</span></span></div>
+    <div class="sched-row"><span class="sched-d">D8</span><span class="sched-date">Fri 10 Jul</span><span><span class="wf-badge wf-combo">Combo</span></span><span>Golf mobility + back stretch · 30 min · final Andaz session<br><span class="sched-loc">Andaz Pilates room</span></span></div>
+    <div class="sched-row"><span class="sched-d">D9</span><span class="sched-date">Sat 11 Jul</span><span><span class="wf-badge wf-cardio">Cardio</span></span><span>Treadmill or elliptical · 30 min · final workout<br><span class="sched-loc">Four Points gym</span></span></div>
+    <div class="sched-row"><span class="sched-d">D10</span><span class="sched-date">Sun 12 Jul</span><span><span class="wf-badge wf-rest">Pre-fly</span></span><span>15 min — hip · back · neck stretch before checkout<br><span class="sched-loc">In room (Four Points)</span></span></div>
+  </div>
+
+</div><!-- /workout -->
+
+
+<!-- ═══════════ PACK ═══════════ -->
+<div id="view-pack" class="view">
+
+  <p class="sh">LAUNDRY STRATEGY</p>
+  <div class="laundry-card">
+    <div class="card-label cl-butter">🧺 Plan</div>
+    <div class="row"><div class="row-l"><div class="row-title">Laundry Day</div><div class="row-sub">Sat 4 Jul at Four Points → clean sets for Andaz stretch</div></div><div class="row-val">Day 2</div></div>
+    <div class="row"><div class="row-l"><div class="row-title">Andaz 5-night run</div><div class="row-sub">Fresh set every session · max 7 sets between washes</div></div><div class="row-val">5–10 Jul</div></div>
+    <div class="row"><div class="row-l"><div class="row-title">Laundry #2 · Fri 10 Jul</div><div class="row-sub">At Four Points on arrival · clean for Sat 11 + Sun 12 flight</div></div><div class="row-val">Day 8</div></div>
+  </div>
+
+  <p class="sh">PACKING LIST</p>
+
+  <div class="pack-sec">
+    <div class="pack-head ph-workout">💪 Workout Tops</div>
+    <div class="pack-item" id="pi1"><input type="checkbox" id="c1" onchange="tp(1)"><label for="c1">Moisture-wicking tops<span class="pi-note">Fresh each session · 8 sessions total · light colours for 33°C humid heat</span></label><span class="pack-qty">×8</span></div>
+    <div class="pack-item" id="pi2"><input type="checkbox" id="c2" onchange="tp(2)"><label for="c2">Mesh / ventilated tank tops<span class="pi-note">For Andaz gym / pool days when it's really hot</span></label><span class="pack-qty">×2</span></div>
+  </div>
+
+  <div class="pack-sec">
+    <div class="pack-head ph-bottoms">🩳 Workout Bottoms</div>
+    <div class="pack-item" id="pi4"><input type="checkbox" id="c4" onchange="tp(4)"><label for="c4">Workout shorts<span class="pi-note">Primary — July heat · fresh each wear</span></label><span class="pack-qty">×6</span></div>
+    <div class="pack-item" id="pi5"><input type="checkbox" id="c5" onchange="tp(5)"><label for="c5">Leggings<span class="pi-note">Pilates / stretch sessions at Andaz · fresh each wear</span></label><span class="pack-qty">×2</span></div>
+  </div>
+
+  <div class="pack-sec">
+    <div class="pack-head ph-bras">🩱 Sports Bras &amp; Socks</div>
+    <div class="pack-item" id="pi7"><input type="checkbox" id="c7" onchange="tp(7)"><label for="c7">Sports bras<span class="pi-note">One fresh per session · no exceptions</span></label><span class="pack-qty">×8</span></div>
+    <div class="pack-item" id="pi8"><input type="checkbox" id="c8" onchange="tp(8)"><label for="c8">Trainer socks — low-cut ankle<span class="pi-note">One fresh pair per session</span></label><span class="pack-qty">×8 pairs</span></div>
+  </div>
+
+  <div class="pack-sec">
+    <div class="pack-head ph-sleep">😴 Sleepwear — min 2</div>
+    <div class="pack-item" id="pi9"><input type="checkbox" id="c9" onchange="tp(9)"><label for="c9">Sleepwear set #1<span class="pi-note">Sleep shorts + light top or sleep dress</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi10"><input type="checkbox" id="c10" onchange="tp(10)"><label for="c10">Sleepwear set #2<span class="pi-note">Alternate across 9 nights</span></label><span class="pack-qty">×1</span></div>
+  </div>
+
+  <div class="pack-sec">
+    <div class="pack-head ph-gym">🏋️ Gym Extras</div>
+    <div class="pack-item" id="pi11"><input type="checkbox" id="c11" onchange="tp(11)"><label for="c11">Trainers / gym shoes<span class="pi-note">Also walks fine</span></label><span class="pack-qty">×1 pair</span></div>
+    <div class="pack-item" id="pi12"><input type="checkbox" id="c12" onchange="tp(12)"><label for="c12">Resistance bands<span class="pi-note">Essential — Four Points no mat area · golf drills in room</span></label><span class="pack-qty">×1 set</span></div>
+  </div>
+
+  <div class="pack-sec">
+    <div class="pack-head ph-clothes">👕 Day Outfits (WFH + Casual)</div>
+    <div class="pack-item" id="pi18"><input type="checkbox" id="c18" onchange="tp(18)"><label for="c18">Casual tops / tees<span class="pi-note">WFH + daytime · 4–5 pieces · breathable</span></label><span class="pack-qty">×5</span></div>
+    <div class="pack-item" id="pi19"><input type="checkbox" id="c19" onchange="tp(19)"><label for="c19">Day bottoms — shorts or light trousers<span class="pi-note">WFH + outside · heat-appropriate</span></label><span class="pack-qty">×3</span></div>
+    <div class="pack-item" id="pi20"><input type="checkbox" id="c20" onchange="tp(20)"><label for="c20">Light cardigan or overshirt<span class="pi-note">Korean AC is aggressive indoors</span></label><span class="pack-qty">×1–2</span></div>
+    <div class="pack-item" id="pi21"><input type="checkbox" id="c21" onchange="tp(21)"><label for="c21">Underwear<span class="pi-note">1 per day + spare</span></label><span class="pack-qty">×10</span></div>
+    <div class="pack-item" id="pi22"><input type="checkbox" id="c22" onchange="tp(22)"><label for="c22">Regular socks</label><span class="pack-qty">×5 pairs</span></div>
+    <div class="pack-item" id="pi54"><input type="checkbox" id="c54" onchange="tp(54)"><label for="c54">Cap / bucket hat<span class="pi-note">Seoul July = 33°C direct sun · essential outdoors</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi55"><input type="checkbox" id="c55" onchange="tp(55)"><label for="c55">Sunglasses<span class="pi-note">UV protection · Seongsu / outdoor days</span></label><span class="pack-qty">×1</span></div>
+  </div>
+
+  <div class="pack-sec">
+    <div class="pack-head ph-evening">✨ Evening &amp; Fine Dining</div>
+    <div class="pack-item" id="pi23"><input type="checkbox" id="c23" onchange="tp(23)"><label for="c23">Smart casual outfits<span class="pi-note">Hermès · Seongsu evenings · Soyoung dinner</span></label><span class="pack-qty">×2</span></div>
+    <div class="pack-item" id="pi24"><input type="checkbox" id="c24" onchange="tp(24)"><label for="c24">Fine dining outfit — dressy<span class="pi-note">Gaon or La Yeon · one polished look</span></label><span class="pack-qty">×1</span></div>
+  </div>
+
+  <div class="pack-sec">
+    <div class="pack-head ph-shoes">👟 Shoes</div>
+    <div class="pack-item" id="pi25"><input type="checkbox" id="c25" onchange="tp(25)"><label for="c25">Casual walking shoes / sneakers<span class="pi-note">Seoul is walkable · stylish enough for Seongsu</span></label><span class="pack-qty">×1 pair</span></div>
+    <div class="pack-item" id="pi26"><input type="checkbox" id="c26" onchange="tp(26)"><label for="c26">Smart shoes / heels<span class="pi-note">Fine dining + Hermès visits</span></label><span class="pack-qty">×1 pair</span></div>
+    <div class="pack-item" id="pi27"><input type="checkbox" id="c27" onchange="tp(27)"><label for="c27">Sandals / sliders<span class="pi-note">Hotel + casual · July heat</span></label><span class="pack-qty">×1 pair</span></div>
+  </div>
+
+  <div class="pack-sec">
+    <div class="pack-head ph-meds">⚠️ Medication — Critical</div>
+    <div class="pack-item" id="pi28"><input type="checkbox" id="c28" onchange="tp(28)"><label for="c28">Hypertension medication<span class="pi-note">Daily · double supply · carry-on only — do NOT check in</span></label><span class="pack-qty">×10+ days</span></div>
+    <div class="pack-item" id="pi29"><input type="checkbox" id="c29" onchange="tp(29)"><label for="c29">Pain relief / ibuprofen</label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi30"><input type="checkbox" id="c30" onchange="tp(30)"><label for="c30">Regular supplements</label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi56"><input type="checkbox" id="c56" onchange="tp(56)"><label for="c56">IM8 sachets<span class="pi-note">Daily nutrition · pre-mix into bottles · don't forget</span></label><span class="pack-qty">×14+</span></div>
+    <div class="pack-item" id="pi57"><input type="checkbox" id="c57" onchange="tp(57)"><label for="c57">Shaker bottle<span class="pi-note">For protein + IM8 · post-workout</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi58"><input type="checkbox" id="c58" onchange="tp(58)"><label for="c58">Protein powder<span class="pi-note">Travel portion in zip-lock · post-workout · 30-day streak support</span></label><span class="pack-qty">×10 serves</span></div>
+  </div>
+
+  <div class="pack-sec">
+    <div class="pack-head ph-toiletries">🧴 Toiletries &amp; Skincare</div>
+    <div class="pack-item" id="pi31"><input type="checkbox" id="c31" onchange="tp(31)"><label for="c31">Sunscreen SPF50+<span class="pi-note">Seoul July = 33°C direct sun</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi32"><input type="checkbox" id="c32" onchange="tp(32)"><label for="c32">Skincare routine<span class="pi-note">Or buy at Olive Young on arrival</span></label><span class="pack-qty">travel size</span></div>
+    <div class="pack-item" id="pi33"><input type="checkbox" id="c33" onchange="tp(33)"><label for="c33">Makeup / touch-up kit</label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi34"><input type="checkbox" id="c34" onchange="tp(34)"><label for="c34">Basic toiletries<span class="pi-note">Toothbrush · shampoo · body wash · deodorant · razor</span></label><span class="pack-qty">travel size</span></div>
+    <div class="pack-item" id="pi35"><input type="checkbox" id="c35" onchange="tp(35)"><label for="c35">Feminine hygiene products</label><span class="pack-qty">as needed</span></div>
+  </div>
+
+  <div class="pack-sec">
+    <div class="pack-head ph-electronics">📱 Electronics &amp; Tech</div>
+    <div class="pack-item" id="pi36"><input type="checkbox" id="c36" onchange="tp(36)"><label for="c36">Laptop + charger<span class="pi-note">Remote work Mon–Fri</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi37"><input type="checkbox" id="c37" onchange="tp(37)"><label for="c37">iPhone charger + cable</label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi38"><input type="checkbox" id="c38" onchange="tp(38)"><label for="c38">Power bank<span class="pi-note">Long days out for Seongsu / shopping</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi39"><input type="checkbox" id="c39" onchange="tp(39)"><label for="c39">Korea plug adapter (Type C/F)<span class="pi-note">Singapore = Type G · Korea = Type C/F</span></label><span class="pack-qty">×1–2</span></div>
+    <div class="pack-item" id="pi40"><input type="checkbox" id="c40" onchange="tp(40)"><label for="c40">DJI Pocket 3 + accessories<span class="pi-note">Content creation · Seongsu · hauls</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi50"><input type="checkbox" id="c50" onchange="tp(50)"><label for="c50">iPad Pro + Apple Pencil<span class="pi-note">WFH · reading · sketching · backup screen</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi51"><input type="checkbox" id="c51" onchange="tp(51)"><label for="c51">Earphones / AirPods<span class="pi-note">Calls · commute · gym</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi52"><input type="checkbox" id="c52" onchange="tp(52)"><label for="c52">Insta360 Luna Ultra + accessories<span class="pi-note">Main camera · lens guard + extra mount</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi53"><input type="checkbox" id="c53" onchange="tp(53)"><label for="c53">Memory cards<span class="pi-note">Insta360 + DJI · format before trip · bring spare</span></label><span class="pack-qty">×2+</span></div>
+  </div>
+
+  <div class="pack-sec">
+    <div class="pack-head ph-docs">📄 Documents &amp; Money</div>
+    <div class="pack-item" id="pi41"><input type="checkbox" id="c41" onchange="tp(41)"><label for="c41">Passport<span class="pi-note">Valid · needed for duty free</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi42"><input type="checkbox" id="c42" onchange="tp(42)"><label for="c42">Credit cards<span class="pi-note">Check forex fees · Visa / MC widely accepted</span></label><span class="pack-qty">×2+</span></div>
+    <div class="pack-item" id="pi43"><input type="checkbox" id="c43" onchange="tp(43)"><label for="c43">KRW cash<span class="pi-note">Markets / street food · ~₩200,000 as start</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi44"><input type="checkbox" id="c44" onchange="tp(44)"><label for="c44">Travel insurance details<span class="pi-note">Screenshot policy number + emergency line</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi45"><input type="checkbox" id="c45" onchange="tp(45)"><label for="c45">Hotel confirmations saved offline<span class="pi-note">Four Points + Andaz conf numbers</span></label><span class="pack-qty">×1</span></div>
+  </div>
+
+  <div class="pack-sec">
+    <div class="pack-head ph-misc">🎒 Travel Essentials</div>
+    <div class="pack-item" id="pi46"><input type="checkbox" id="c46" onchange="tp(46)"><label for="c46">Compact umbrella<span class="pi-note">Seoul July = rainy season · essential</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi47"><input type="checkbox" id="c47" onchange="tp(47)"><label for="c47">Tote / foldable shopping bag<span class="pi-note">Olive Young + Lotte Mart haul</span></label><span class="pack-qty">×1–2</span></div>
+    <div class="pack-item" id="pi48"><input type="checkbox" id="c48" onchange="tp(48)"><label for="c48">Foldable extra bag / duffel<span class="pi-note">Shopping overflow on the way home</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi49"><input type="checkbox" id="c49" onchange="tp(49)"><label for="c49">Neck pillow + eye mask<span class="pi-note">SQ600 departs 08:10 · early morning flight</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi59"><input type="checkbox" id="c59" onchange="tp(59)"><label for="c59">Book to read<span class="pi-note">Flight + hotel downtime · physical or loaded on iPad</span></label><span class="pack-qty">×1</span></div>
+  </div>
+
+  <div class="pack-sec">
+    <div class="pack-head ph-laundry">🧺 Laundry &amp; Packing Kit</div>
+    <div class="pack-item" id="pi14"><input type="checkbox" id="c14" onchange="tp(14)"><label for="c14">Travel laundry sachets<span class="pi-note">Hand-wash option if hotel laundry slow</span></label><span class="pack-qty">×4</span></div>
+    <div class="pack-item" id="pi15"><input type="checkbox" id="c15" onchange="tp(15)"><label for="c15">Mesh laundry bag</label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi16"><input type="checkbox" id="c16" onchange="tp(16)"><label for="c16">Box cutter<span class="pi-note">⚠ CHECKED LUGGAGE ONLY — not permitted in carry-on · for opening snack boxes at home</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi17"><input type="checkbox" id="c17" onchange="tp(17)"><label for="c17">Packing tape<span class="pi-note">Re-seal boxes · reinforce snack bags in luggage</span></label><span class="pack-qty">×1</span></div>
+  </div>
+
+</div><!-- /pack -->
+
+
+<!-- ═══════════ EAT ═══════════ -->
+<div id="view-eat" class="view">
+
+  <p class="sh">SOY CRAB</p>
+  <div class="eat-card" style="border-color:rgba(150,205,181,.4);">
+    <div class="eat-top"><div class="eat-name">Pro Soy Crab</div><span class="badge b-mint">🦀 Ganjang Gejang</span></div>
+    <div class="eat-meta">Gangnam · near Andaz</div>
+    <div class="eat-note">Specialist soy marinated crab — ganjang gejang. Called "rice thief" because you can't stop eating rice with it. Premium dinner experience.</div>
+    <div class="eat-book">📅 Book ahead</div>
+  </div>
+
+  <p class="sh">BBQ &amp; BEEF</p>
+  <div class="eat-card">
+    <div class="eat-top"><div class="eat-name">Mongtan</div><span class="badge b-peach">🥩 Premium BBQ</span></div>
+    <div class="eat-meta">⭐ 4.1 · Yongsan District · mongtan.co.kr · 02-794-8592</div>
+    <div class="eat-note">Korean barbecue · ₩40,000–90,000pp. Yongsan — between both hotels, closer to Four Points. Opens 12:00, closed Mondays. Good dinner option on Four Points nights (Fri 3 / Sat 4 / Fri 10 / Sat 11).</div>
+    <div class="eat-book">📅 Book ahead · mongtan.co.kr</div>
+  </div>
+  <div class="eat-card">
+    <div class="eat-top"><div class="eat-name">Dosan Butchers</div><span class="badge b-peach">Premium Beef</span></div>
+    <div class="eat-meta">Apgujeong · ~5 min from Andaz</div>
+    <div class="eat-note">Premium dry-aged beef. Walk-in. Easy weeknight from the hotel.</div>
+  </div>
+  <div class="eat-card">
+    <div class="eat-top"><div class="eat-name">Maple Tree House</div><span class="badge b-peach">Hanwoo</span></div>
+    <div class="eat-meta">Apgujeong · multiple branches</div>
+    <div class="eat-note">Gold standard premium hanwoo. Tableside BBQ. ~SGD 120–180pp.</div>
+    <div class="eat-book">📅 Book ahead on weekends</div>
+  </div>
+  <div class="eat-card">
+    <div class="eat-top"><div class="eat-name">Palsaik Samgyeopsal</div><span class="badge b-peach">Pork BBQ</span></div>
+    <div class="eat-meta">8-flavour pork belly · Gangnam</div>
+    <div class="eat-note">Eight marinades — cheese, ginseng, curry, herb. Casual + fun. ~SGD 40–60pp. Walk-in.</div>
+  </div>
+
+  <p class="sh">BREAKFAST</p>
+  <div class="eat-card" style="border-color:rgba(236,216,148,.5);">
+    <div class="eat-top"><div class="eat-name">London Bagel Museum Dosan</div><span class="badge b-butter">⭐ #1 Pick</span></div>
+    <div class="eat-meta">Dosan · a few min walk from Andaz · opens 08:00</div>
+    <div class="eat-note">Go 8am — queue is substantial by 10am. Order: Potato Cheese Bagel ⭐ · Truffle Butter Bagel · Spring Onion Pretzel Bagel · Mushroom Soup · Cream cheese sampler.</div>
+    <div class="eat-book">📅 Sun 5 Jul 08:00 — on the way to Andaz check-in</div>
+  </div>
+
+  <p class="sh">MYEONGDONG LUNCHES · near Four Points</p>
+  <div class="eat-card">
+    <div class="eat-top"><div class="eat-name">Kkanbu Chicken Myeongdong</div><span class="badge b-sky">🍗 Walk</span></div>
+    <div class="eat-meta">Myeongdong 8ga-gil, 22 IB타워 2F · kkanbu.co.kr · 02-318-8333</div>
+    <div class="eat-note">⭐ 4.6 · ₩10,000–20,000 · Opens 12:00. Crispy Korean fried chicken steps from Four Points. Plan: Sat 4 Jul (post-clinic lunch) · Fri 10 Jul (post-move lunch) · Sat 11 Jul.</div>
+  </div>
+
+  <p class="sh">CAFES NEAR ANDAZ · Dosan / Apgujeong</p>
+  <div class="eat-card" style="border-color:rgba(236,216,148,.5);">
+    <div class="eat-top"><div class="eat-name">NUDAKE Haus Dosan</div><span class="badge b-butter">⭐ SO Seoul</span></div>
+    <div class="eat-meta">Near Andaz · by Gentle Monster · Dosan</div>
+    <div class="eat-note">Desserts look like modern art. Don't come for the coffee — come for one of the coolest café experiences in Seoul. This is SO Seoul.</div>
+  </div>
+  <div class="eat-card">
+    <div class="eat-top"><div class="eat-name">Mooni Apgujeong</div><span class="badge b-pink">📸 Alice Pick</span></div>
+    <div class="eat-meta">⭐ 4.3 · Cafe · Apgujeong</div>
+    <div class="eat-note">Beautiful desserts. Very Korean aesthetic. Excellent if Alice wants somewhere photogenic — content-worthy spot.</div>
+  </div>
+
+  <p class="sh">CAFES NEAR FOUR POINTS · Myeongdong</p>
+  <div class="eat-card">
+    <div class="eat-top"><div class="eat-name">PaperCrane Bakery &amp; Cafe</div><span class="badge b-mint">⭐ 4.9 Bakery</span></div>
+    <div class="eat-meta">Near Four Points · very easy walk</div>
+    <div class="eat-note">Excellent croissants. Modern café. The sort of place to choose over a chain — independent, quality-focused.</div>
+  </div>
+  <div class="eat-card">
+    <div class="eat-top"><div class="eat-name">BRICKSAND Myeongdong</div><span class="badge b-peach">⭐ 4.9 Gifts</span></div>
+    <div class="eat-meta">⭐ 4.9 · Bakery · Myeongdong</div>
+    <div class="eat-note">Famous for brick-shaped financiers. Very unique. Great gifts. Don't buy one — buy 5–6 different flavours.</div>
+  </div>
+
+  <p class="sh">ANDAZ LUNCHES · walkable from Gangnam</p>
+  <div class="eat-card">
+    <div class="eat-top"><div class="eat-name">Jikang Korean Restaurant</div><span class="badge b-mint">⭐ 4.9 Walk</span></div>
+    <div class="eat-meta">Apgujeong Main Branch · ~10 min walk from Andaz</div>
+    <div class="eat-note">4.9★ · Less touristy. Order: soy marinated crab · braised beef · traditional side dishes. Korean drinking food without needing to drink. Plan: Mon 6 Jul + Wed 8 Jul lunch (Daewoo closed Mon).</div>
+  </div>
+  <div class="eat-card">
+    <div class="eat-top"><div class="eat-name">Daewoo Budaejjigae</div><span class="badge b-peach">🍲 Army Stew</span></div>
+    <div class="eat-meta">34 Teheran-ro 25-gil, Gangnam · 02-552-1663 · opens 11:00</div>
+    <div class="eat-note">⭐ 4.3 · ₩10,000–20,000 · Closed Mondays. Army stew — tofu, sausage, ramen noodles, spam, kimchi in one pot. Walkable from Andaz. Plan: Tue 7 Jul + Thu 9 Jul lunch.</div>
+  </div>
+
+  <p class="sh">SOYOUNG DINNER</p>
+  <div class="eat-card">
+    <div class="eat-top"><div class="eat-name">Ask Soyoung</div><span class="badge b-mint">Local Intel</span></div>
+    <div class="eat-meta">Let her pick</div>
+    <div class="eat-note">She's local — share the vibe and let her suggest the spot.</div>
+  </div>
+  <div class="eat-card">
+    <div class="eat-top"><div class="eat-name">Balwoo Gongyang</div><span class="badge b-mint">Unique</span></div>
+    <div class="eat-meta">Temple cuisine · Insadong</div>
+    <div class="eat-note">Buddhist temple food — vegetarian, no garlic/onion. Special and memorable for a long catch-up.</div>
+    <div class="eat-book">📅 Book ahead</div>
+  </div>
+
+</div><!-- /eat -->
+
+
+<!-- ═══════════ SHOP ═══════════ -->
+<div id="view-shop" class="view">
+
+  <p class="sh">HERMÈS</p>
+  <div class="shop-card" style="border-color:rgba(240,184,148,.5);">
+    <div class="shop-name">Hermès Cheongdam</div>
+    <div class="shop-area">Cheongdam-dong, Gangnam · Flagship</div>
+    <div class="shop-note">Largest Hermès in Korea. All product lines incl. leather goods. 10 min from Andaz.</div>
+    <div style="margin-top:8px;"><span class="badge b-peach">🧡 Hermès</span></div>
+  </div>
+  <div class="shop-card" style="border-color:rgba(240,184,148,.5);">
+    <div class="shop-name">Hermès Lotte Avenuel</div>
+    <div class="shop-area">Lotte Dept Store · Sogong-dong</div>
+    <div class="shop-note">Second Hermès in Seoul. Near Myeongdong hotel. Secondary if Cheongdam didn't have stock.</div>
+    <div style="margin-top:8px;"><span class="badge b-peach">🧡 Hermès</span></div>
+  </div>
+  <div class="shop-card">
+    <div class="shop-name">Galleria Department Store</div>
+    <div class="shop-area">Apgujeong · East + West Wings</div>
+    <div class="shop-note">Korea's most prestigious dept store. East = Chanel, Dior, Bottega, Celine, Loewe. Outstanding beauty hall.</div>
+    <div style="margin-top:8px;"><span class="badge b-lav">💜 Luxury</span></div>
+  </div>
+
+  <p class="sh">K-BEAUTY</p>
+  <div class="shop-card" style="border-color:rgba(240,168,190,.4);">
+    <div class="shop-name">Olive Young Myeongdong</div>
+    <div class="shop-area">Flagship — 3 floors · open till 23:00</div>
+    <div class="shop-note">COSRX · Anua · Beauty of Joseon · Some By Mi · Laneige · Round Lab. Steps from Four Points.</div>
+    <div style="margin-top:8px;"><span class="badge b-pink">💗 K-Beauty</span></div>
+  </div>
+  <div class="shop-card" style="border-color:rgba(240,168,190,.4);">
+    <div class="shop-name">Sulwhasoo</div>
+    <div class="shop-area">Flagship · Apgujeong</div>
+    <div class="shop-note">Korea's most prestigious luxury skincare. Concentrated Ginseng Renewing Serum is the icon.</div>
+    <div style="margin-top:8px;"><span class="badge b-pink">💗 Luxury Beauty</span></div>
+  </div>
+
+  <p class="sh">DUTY FREE + SNACKS</p>
+  <div class="shop-card">
+    <div class="shop-name">Lotte Duty Free</div>
+    <div class="shop-area">Myeongdong · open till 21:00</div>
+    <div class="shop-note">Best prices on cosmetics, fragrances, liquor. Buy at Myeongdong, collect at ICN with passport + boarding pass.</div>
+    <div style="margin-top:8px;"><span class="badge b-lilac">💜 Duty Free</span></div>
+  </div>
+  <div class="shop-card">
+    <div class="shop-name">Snack Haul</div>
+    <div class="shop-area">Lotte Mart + CU / GS25 · last days</div>
+    <div class="shop-note">Honey butter chips · Pepero · banana milk · Maxim T-Gold coffee sticks · Choco Heim · dried squid</div>
+    <div style="margin-top:8px;"><span class="badge b-peach">🎁 Food Gifts</span></div>
+  </div>
+
+</div><!-- /shop -->
+
+
+<!-- ═══════════ OUTFITS ═══════════ -->
+<div id="view-outfits" class="view">
+
+  <p class="sh">DAY-BY-DAY OUTFITS</p>
+  <div class="outfit-table">
+
+    <div class="outfit-row">
+      <div class="outfit-dr"><span class="outfit-date">Fri 3 Jul</span><span class="badge b-lav" style="font-size:8px;">✈️ FLY</span><span class="outfit-daynum">Day 1</span></div>
+      <div class="outfit-cols">
+        <div><div class="oc-label">DAYTIME</div><div class="oc-text">Travel outfit — comfortable, presentable for SQ Business · breathable trousers or joggers + tee</div></div>
+        <div><div class="oc-label">EVENING</div><div class="oc-text">Same · arrive 4:30pm · no change needed</div></div>
+      </div>
+    </div>
+
+    <div class="outfit-row">
+      <div class="outfit-dr"><span class="outfit-date">Sat 4 Jul</span><span class="badge b-sky" style="font-size:8px;">💉 CLINIC</span><span class="outfit-daynum">Day 2</span></div>
+      <div class="outfit-cols">
+        <div><div class="oc-label">DAYTIME</div><div class="oc-text">Casual — tee + shorts · gym morning then out · <strong>Laundry today</strong></div></div>
+        <div><div class="oc-label">EVENING</div><div class="oc-text">Smart casual — Olive Young haul · Myeongdong streets</div></div>
+      </div>
+    </div>
+
+    <div class="outfit-row">
+      <div class="outfit-dr"><span class="outfit-date">Sun 5 Jul</span><span class="badge b-lilac" style="font-size:8px;">🚗 MOVE</span><span class="outfit-daynum">Day 3</span></div>
+      <div class="outfit-cols">
+        <div><div class="oc-label">DAYTIME</div><div class="oc-text">Casual cool — tee + shorts or wide-leg trousers · checkout morning → Seongsu afternoon · style-conscious area</div></div>
+        <div><div class="oc-label">EVENING</div><div class="oc-text">Smart casual — check in Andaz · dinner near Gangnam</div></div>
+      </div>
+    </div>
+
+    <div class="outfit-row">
+      <div class="outfit-dr"><span class="outfit-date">Mon 6 Jul</span><span class="badge b-mint" style="font-size:8px;">💻 WFH</span><span class="outfit-daynum">Day 4</span></div>
+      <div class="outfit-cols">
+        <div><div class="oc-label">LOUNGE / WFH</div><div class="oc-text">Tee + shorts or soft trousers · presentable on camera top half · Andaz all day</div></div>
+        <div><div class="oc-label">EVENING</div><div class="oc-text">Smart casual — Dosan Butchers · Apgujeong</div></div>
+      </div>
+    </div>
+
+    <div class="outfit-row">
+      <div class="outfit-dr"><span class="outfit-date">Tue 7 Jul</span><span class="badge b-butter" style="font-size:8px;">🌟 MICHELIN</span><span class="outfit-daynum">Day 5</span></div>
+      <div class="outfit-cols">
+        <div><div class="oc-label">LOUNGE / WFH</div><div class="oc-text">Tee + shorts · work from room or lounge</div></div>
+        <div><div class="oc-label">EVENING — DRESSY</div><div class="oc-text"><strong>Fine dining outfit</strong> (Gaon / La Yeon) + smart shoes · Hermès Cheongdam before dinner → dress to impress SA</div></div>
+      </div>
+    </div>
+
+    <div class="outfit-row">
+      <div class="outfit-dr"><span class="outfit-date">Wed 8 Jul</span><span class="badge b-peach" style="font-size:8px;">HOLD</span><span class="outfit-daynum">Day 6</span></div>
+      <div class="outfit-cols">
+        <div><div class="oc-label">LOUNGE / WFH</div><div class="oc-text">Tee + soft trousers</div></div>
+        <div><div class="oc-label">EVENING</div><div class="oc-text">Smart casual if Soyoung dinner tonight · easy, not overdressed</div></div>
+      </div>
+    </div>
+
+    <div class="outfit-row">
+      <div class="outfit-dr"><span class="outfit-date">Thu 9 Jul</span><span class="badge b-peach" style="font-size:8px;">HOLD</span><span class="outfit-daynum">Day 7</span></div>
+      <div class="outfit-cols">
+        <div><div class="oc-label">LOUNGE / WFH</div><div class="oc-text">Tee + shorts</div></div>
+        <div><div class="oc-label">EVENING</div><div class="oc-text">Smart casual if Soyoung dinner tonight</div></div>
+      </div>
+    </div>
+
+    <div class="outfit-row">
+      <div class="outfit-dr"><span class="outfit-date">Fri 10 Jul</span><span class="badge b-lilac" style="font-size:8px;">🚗 MOVE</span><span class="outfit-daynum">Day 8</span></div>
+      <div class="outfit-cols">
+        <div><div class="oc-label">LOUNGE / WFH</div><div class="oc-text">Tee + shorts · WFH from Andaz until checkout · smart casual for Myeongdong arrival</div></div>
+        <div><div class="oc-label">EVENING</div><div class="oc-text">Casual — settle into Four Points · Myeongdong dinner</div></div>
+      </div>
+    </div>
+
+    <div class="outfit-row">
+      <div class="outfit-dr"><span class="outfit-date">Sat 11 Jul</span><span class="badge b-sky" style="font-size:8px;">🛍️ LAST</span><span class="outfit-daynum">Day 9</span></div>
+      <div class="outfit-cols">
+        <div><div class="oc-label">DAYTIME</div><div class="oc-text">Casual — tee + shorts · Lotte Mart + Olive Young + Duty Free shopping day</div></div>
+        <div><div class="oc-label">EVENING</div><div class="oc-text">Smart casual — farewell dinner · Myeongdong area</div></div>
+      </div>
+    </div>
+
+    <div class="outfit-row">
+      <div class="outfit-dr"><span class="outfit-date">Sun 12 Jul</span><span class="badge b-lav" style="font-size:8px;">✈️ HOME</span><span class="outfit-daynum">Day 10</span></div>
+      <div class="outfit-cols">
+        <div><div class="oc-label">DAYTIME</div><div class="oc-text">Travel outfit (comfortable, SQ Business) — reuse Fri 3 look or fresh set</div></div>
+        <div><div class="oc-label">EVENING</div><div class="oc-text">SilverKris Lounge ICN · flight home</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="sh">COUNT SUMMARY</p>
+  <div class="card">
+    <div class="row"><div class="row-l"><div class="row-title">WFH / Lounge</div><div class="row-sub">Tee + shorts or soft trousers · rotate 3 tees + 2–3 bottoms</div></div><div class="row-val">5 days</div></div>
+    <div class="row"><div class="row-l"><div class="row-title">Smart Casual</div><div class="row-sub">Seongsu · Soyoung · farewell dinner · 2 outfits rotating</div></div><div class="row-val">×2</div></div>
+    <div class="row"><div class="row-l"><div class="row-title">Dressy</div><div class="row-sub">Fine dining Tue 7 Jul + Hermès visit · pack carefully</div></div><div class="row-val">×1</div></div>
+  </div>
+
+</div><!-- /outfits -->
+
+
+<!-- ═══════════ CHECKLIST ═══════════ -->
+<div id="view-checklist" class="view">
+
+  <div class="export-wrap">
+    <button class="export-btn" onclick="exportData()">⬇ Export trip data as JSON</button>
+    <p class="export-note">iPhone: Save to Files → iCloud Drive → auto-syncs to Mac Workspace · Filename: seoul26-export-YYYY-MM-DD.json</p>
+  </div>
+
+  <p class="sh">URGENT</p>
+  <div class="cl-card">
+    <div class="cl-head" style="color:#c2607e;">🚨 Book Now</div>
+    <div class="cl-item" id="cl2"><input type="checkbox" id="cc2" onchange="tc(2)"><label for="cc2"><strong>Confirm Andaz dates with hotel</strong><span class="cl-note">Verify: 5 Jul check-in · 10 Jul check-out (5 nights)</span></label><span class="prio prio-now">Confirm</span></div>
+    <div class="cl-item" id="cl3"><input type="checkbox" id="cc3" onchange="tc(3)"><label for="cc3"><strong>Confirm Soyoung dinner — Wed 8 or Thu 9 Jul</strong><span class="cl-note">Drop the other calendar hold once confirmed</span></label><span class="prio prio-now">Confirm</span></div>
+    <div class="cl-item" id="cl12"><input type="checkbox" id="cc12" onchange="tc(12)"><label for="cc12"><strong>Book Mongtan (BBQ)</strong><span class="cl-note">Yongsan · mongtan.co.kr · 02-794-8592 · closed Mondays · good for Four Points nights</span></label><span class="prio prio-now">Book Now</span></div>
+    <div class="cl-item" id="cl13"><input type="checkbox" id="cc13" onchange="tc(13)"><label for="cc13"><strong>Book Pro Soy Crab</strong><span class="cl-note">Gangnam · ganjang gejang specialist · book ahead for dinner</span></label><span class="prio prio-now">Book Now</span></div>
+  </div>
+
+  <p class="sh">BEFORE DEPARTURE</p>
+  <div class="cl-card">
+    <div class="cl-head" style="color:#9e8020;">📅 Pre-Trip</div>
+    <div class="cl-item" id="cl4"><input type="checkbox" id="cc4" onchange="tc(4)"><label for="cc4"><strong>Pocket WiFi / SIM card</strong><span class="cl-note">KT or SKT tourist SIM at ICN arrivals · or order WiFi egg</span></label><span class="prio prio-soon">Pre-Trip</span></div>
+    <div class="cl-item" id="cl5"><input type="checkbox" id="cc5" onchange="tc(5)"><label for="cc5"><strong>T-money card or Wowpass</strong><span class="cl-note">Wowpass accepts credit card top-up + cash withdrawals · pick up Myeongdong</span></label><span class="prio prio-soon">Pre-Trip</span></div>
+    <div class="cl-item" id="cl6"><input type="checkbox" id="cc6" onchange="tc(6)"><label for="cc6"><strong>Download: Naver Maps + Kakao T</strong><span class="cl-note">Naver better than Google in Korea · Kakao T for taxis</span></label><span class="prio prio-soon">Download</span></div>
+    <div class="cl-item" id="cl7"><input type="checkbox" id="cc7" onchange="tc(7)"><label for="cc7"><strong>Pack resistance bands</strong><span class="cl-note">Essential — Four Points gym has no mat/flexibility area</span></label><span class="prio prio-soon">Pack</span></div>
+  </div>
+
+  <p class="sh">ON TRIP</p>
+  <div class="cl-card">
+    <div class="cl-head" style="color:#4878b0;">✈️ During Trip</div>
+    <div class="cl-item" id="cl8"><input type="checkbox" id="cc8" onchange="tc(8)"><label for="cc8"><strong>Laundry #1 — Sat 4 Jul at Four Points</strong><span class="cl-note">Day 2 · clean sets for Andaz 5-night stretch</span></label><span class="prio prio-trip">On Trip</span></div>
+    <div class="cl-item" id="cl14"><input type="checkbox" id="cc14" onchange="tc(14)"><label for="cc14"><strong>Laundry #2 — Fri 10 Jul at Four Points</strong><span class="cl-note">Day 8 · on arrival from Andaz · clean for Sat 11 + flight home</span></label><span class="prio prio-trip">On Trip</span></div>
+    <div class="cl-item" id="cl9"><input type="checkbox" id="cc9" onchange="tc(9)"><label for="cc9"><strong>Tax refund on dept store purchases</strong><span class="cl-note">Global Blue / Premier Tax Free form · claim at ICN departure counters</span></label><span class="prio prio-trip">On Trip</span></div>
+    <div class="cl-item" id="cl10"><input type="checkbox" id="cc10" onchange="tc(10)"><label for="cc10"><strong>Duty free collection at ICN</strong><span class="cl-note">Passport + boarding pass · collect at Lotte/SM counters airside</span></label><span class="prio prio-trip">On Trip</span></div>
+    <div class="cl-item" id="cl11"><input type="checkbox" id="cc11" onchange="tc(11)"><label for="cc11"><strong>Taxi to ICN T2 · depart Four Points ~13:00 Sun 12 Jul</strong><span class="cl-note">~60 min drive · aim airside by 14:00 · SQ601 15:45 · order Kakao T / book in advance</span></label><span class="prio prio-trip">Departure</span></div>
+  </div>
+
+</div><!-- /checklist -->
+
+</div><!-- /content -->
+
+<script>
+const TABS = ['itinerary','workout','pack','eat','shop','outfits','checklist'];
+
+// ── FIREBASE CONFIG — paste your values here after creating a free project ──
+// Go to console.firebase.google.com → New project → Realtime Database → Start in test mode
+// Then Project Settings → Your apps → Add web app → copy config below
+const FB_CONFIG = {
+  apiKey:            "PASTE_apiKey",
+  authDomain:        "PASTE_PROJECT.firebaseapp.com",
+  databaseURL:       "https://PASTE_PROJECT-default-rtdb.firebaseio.com",
+  projectId:         "PASTE_PROJECT",
+  storageBucket:     "PASTE_PROJECT.appspot.com",
+  messagingSenderId: "PASTE_messagingSenderId",
+  appId:             "PASTE_appId"
+};
+const FB_LIVE = !FB_CONFIG.apiKey.startsWith('PASTE');
+let db;
+if (FB_LIVE) { firebase.initializeApp(FB_CONFIG); db = firebase.database(); }
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const active = TABS[i] === name;
+    t.classList.toggle('active', active);
+    t.style.borderBottomColor = active ? (t.dataset.color||'var(--lavender)') : 'transparent';
+    t.style.color = active ? 'var(--text)' : '';
+  });
+  document.querySelectorAll('.view').forEach(v =>
+    v.classList.toggle('active', v.id === 'view-' + name));
+}
+
+// ── CLOCK + COUNTDOWN ────────────────────────────────────────────────────────
+function sgtNow() { return new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Singapore'})); }
+function pad(n) { return String(n).padStart(2,'0'); }
+function updateClock() {
+  const d = sgtNow();
+  document.getElementById('topbar-clock').textContent = pad(d.getHours())+':'+pad(d.getMinutes())+' SGT';
+}
+function updateCountdown() {
+  const diff = new Date('2026-07-03T08:10:00+08:00') - sgtNow();
+  if (diff<=0) { ['cd-days','cd-hrs','cd-mins'].forEach(id=>document.getElementById(id).textContent='00'); return; }
+  const m = Math.floor(diff/60000);
+  document.getElementById('cd-days').textContent = pad(Math.floor(m/1440));
+  document.getElementById('cd-hrs').textContent  = pad(Math.floor((m%1440)/60));
+  document.getElementById('cd-mins').textContent = pad(m%60);
+}
+
+// ── CHECKBOXES ───────────────────────────────────────────────────────────────
+function tp(n) {
+  document.getElementById('pi'+n)?.classList.toggle('checked', document.getElementById('c'+n)?.checked);
+  saveBoxes();
+}
+function tc(n) {
+  document.getElementById('cl'+n)?.classList.toggle('checked', document.getElementById('cc'+n)?.checked);
+  saveBoxes();
+}
+function saveBoxes() {
+  const s = {};
+  for (let i=1;i<=59;i++) s['p'+i] = document.getElementById('c'+i)?.checked||false;
+  for (let i=1;i<=14;i++) s['c'+i] = document.getElementById('cc'+i)?.checked||false;
+  if (FB_LIVE) db.ref('seoul26/state').set(s);
+  try { localStorage.setItem('seoul26', JSON.stringify(s)); } catch(e) {}
+}
+function loadBoxes(s) {
+  if (!s) return;
+  for (let i=1;i<=59;i++) {
+    const cb = document.getElementById('c'+i); if (!cb) continue;
+    cb.checked = !!s['p'+i];
+    document.getElementById('pi'+i)?.classList.toggle('checked', !!s['p'+i]);
+  }
+  for (let i=1;i<=14;i++) {
+    const cb = document.getElementById('cc'+i); if (!cb) continue;
+    cb.checked = !!s['c'+i];
+    document.getElementById('cl'+i)?.classList.toggle('checked', !!s['c'+i]);
+  }
+}
+
+// ── FOOD LOGS ────────────────────────────────────────────────────────────────
+const TRIP_DATES = [
+  {v:'2026-07-03',l:'Fri 3 Jul'},{v:'2026-07-04',l:'Sat 4 Jul'},{v:'2026-07-05',l:'Sun 5 Jul'},
+  {v:'2026-07-06',l:'Mon 6 Jul'},{v:'2026-07-07',l:'Tue 7 Jul'},{v:'2026-07-08',l:'Wed 8 Jul'},
+  {v:'2026-07-09',l:'Thu 9 Jul'},{v:'2026-07-10',l:'Fri 10 Jul'},{v:'2026-07-11',l:'Sat 11 Jul'},
+  {v:'2026-07-12',l:'Sun 12 Jul'}
+];
+const MEALS = ['Breakfast','Lunch','Dinner','Snack','Cafe'];
+const rvState = {};
+
+function slugify(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+
+function initFoodLogs() {
+  document.querySelectorAll('.eat-card').forEach(card => {
+    const nameEl = card.querySelector('.eat-name');
+    if (!nameEl) return;
+    const rid = slugify(nameEl.textContent.trim());
+    card.dataset.rid = rid;
+    const fl = document.createElement('div');
+    fl.className = 'food-log';
+    fl.innerHTML = `
+      <div class="fl-visited" id="flv-${rid}" style="display:none"></div>
+      <button class="fl-toggle" id="flt-${rid}" onclick="toggleLog('${rid}')">📝 Log visit</button>
+      <div class="fl-form" id="flf-${rid}">
+        <div class="fl-row">
+          <select class="fl-select" id="fld-${rid}">
+            <option value="">Date</option>
+            ${TRIP_DATES.map(d=>`<option value="${d.v}">${d.l}</option>`).join('')}
+          </select>
+          <select class="fl-select" id="flm-${rid}">
+            <option value="">Meal</option>
+            ${MEALS.map(m=>`<option value="${m.toLowerCase()}">${m}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fl-rv-row">
+          <span class="fl-rv-lbl">Visit again?</span>
+          <div class="fl-rv-btns">
+            ${['yes','no','maybe'].map(v=>`<button class="fl-rv" id="flr-${rid}-${v}" onclick="setRv('${rid}','${v}')">${v[0].toUpperCase()+v.slice(1)}</button>`).join('')}
+          </div>
+        </div>
+        <textarea class="fl-notes" id="fln-${rid}" placeholder="Notes…" rows="2"></textarea>
+        <button class="fl-save-btn" onclick="saveLog('${rid}')">Save visit</button>
+      </div>`;
+    card.appendChild(fl);
+  });
+}
+
+function toggleLog(rid) {
+  const open = document.getElementById('flf-'+rid).classList.toggle('open');
+  document.getElementById('flt-'+rid).textContent = open ? '✕ Close' : '📝 Log visit';
+}
+function setRv(rid, val) {
+  rvState[rid] = val;
+  ['yes','no','maybe'].forEach(v => document.getElementById(`flr-${rid}-${v}`)?.classList.toggle('active', v===val));
+}
+function saveLog(rid) {
+  const date = document.getElementById('fld-'+rid)?.value;
+  const meal = document.getElementById('flm-'+rid)?.value;
+  if (!date || !meal) {
+    const btn = document.querySelector(`#flf-${rid} .fl-save-btn`);
+    btn.textContent = '⚠ Pick date + meal';
+    setTimeout(()=>btn.textContent='Save visit', 2000);
+    return;
+  }
+  const log = {
+    date, meal,
+    revisit: rvState[rid]||'',
+    notes: document.getElementById('fln-'+rid)?.value.trim()||'',
+    saved: new Date().toISOString()
+  };
+  if (FB_LIVE) db.ref('seoul26/food_logs/'+rid).set(log);
+  try {
+    const c = JSON.parse(localStorage.getItem('seoul26_logs')||'{}');
+    c[rid] = log;
+    localStorage.setItem('seoul26_logs', JSON.stringify(c));
+  } catch(e) {}
+  renderVisited(rid, log);
+  document.getElementById('flf-'+rid)?.classList.remove('open');
+  document.getElementById('flt-'+rid).textContent = '✏️ Edit visit';
+}
+function renderVisited(rid, log) {
+  if (!log) return;
+  const el = document.getElementById('flv-'+rid); if (!el) return;
+  const dl = TRIP_DATES.find(d=>d.v===log.date)?.l || log.date;
+  const ri = log.revisit==='yes'?'💚':log.revisit==='no'?'🔴':log.revisit==='maybe'?'🟡':'';
+  el.style.display = 'flex';
+  el.innerHTML = `<span class="fl-vis-badge">✅ ${dl} · ${log.meal}</span>${log.revisit?`<span class="fl-vis-rv">${ri} ${log.revisit}</span>`:''}${log.notes?`<span class="fl-vis-note">${log.notes}</span>`:''}`;
+  const fd = document.getElementById('fld-'+rid); if (fd) fd.value = log.date;
+  const fm = document.getElementById('flm-'+rid); if (fm) fm.value = log.meal;
+  if (log.revisit) setRv(rid, log.revisit);
+  const fn = document.getElementById('fln-'+rid); if (fn) fn.value = log.notes||'';
+  document.getElementById('flt-'+rid).textContent = '✏️ Edit visit';
+}
+
+// ── EXPORT ───────────────────────────────────────────────────────────────────
+async function exportData() {
+  const data = { exported: new Date().toISOString(), pack: {}, checklist: {}, food_logs: {} };
+  for (let i=1;i<=59;i++) data.pack['p'+i] = document.getElementById('c'+i)?.checked||false;
+  for (let i=1;i<=14;i++) data.checklist['c'+i] = document.getElementById('cc'+i)?.checked||false;
+  if (FB_LIVE) {
+    const snap = await db.ref('seoul26/food_logs').once('value');
+    data.food_logs = snap.val()||{};
+  } else {
+    try { data.food_logs = JSON.parse(localStorage.getItem('seoul26_logs')||'{}'); } catch(e) {}
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `seoul26-export-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  switchTab('itinerary');
+  initFoodLogs();
+  updateClock();
+  updateCountdown();
+  setInterval(updateClock, 30000);
+  setInterval(updateCountdown, 30000);
+
+  if (FB_LIVE) {
+    db.ref('seoul26/state').on('value', snap => loadBoxes(snap.val()));
+    db.ref('seoul26/food_logs').on('value', snap => {
+      const logs = snap.val()||{};
+      Object.entries(logs).forEach(([rid, log]) => renderVisited(rid, log));
+    });
+  } else {
+    try { loadBoxes(JSON.parse(localStorage.getItem('seoul26')||'{}')); } catch(e) {}
+    try {
+      const logs = JSON.parse(localStorage.getItem('seoul26_logs')||'{}');
+      Object.entries(logs).forEach(([rid, log]) => renderVisited(rid, log));
+    } catch(e) {}
+  }
+});
+</script>
+</body>
+</html>

@@ -294,6 +294,27 @@
     .qty-num { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:var(--lavender); min-width:16px; text-align:center; }
     .qty-tgt { font-size:9px; color:var(--muted2); white-space:nowrap; }
 
+    /* ── PACK FIT LINK ── */
+    .pack-fit-btn { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:10px; font-size:10px; font-weight:700; color:var(--muted); cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:.5px; margin-bottom:12px; }
+
+    /* ── WASH PLAN ── */
+    .wp-toggle { display:flex; gap:8px; margin-bottom:12px; }
+    .wp-btn { border:1px solid var(--border); border-radius:20px; padding:5px 18px; font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; background:var(--surface); color:var(--muted); cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; }
+    .wp-btn.active { background:var(--text); color:var(--bg); border-color:var(--text); }
+    .wash-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
+    .wash-row:last-child { border-bottom:none; }
+    .wash-cat { flex:1; font-size:11px; font-weight:600; }
+    .wash-cat-sub { font-size:9px; color:var(--muted2); margin-top:2px; }
+    .wash-packed { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:var(--lavender); white-space:nowrap; min-width:20px; text-align:right; }
+    .wash-status { font-size:9px; font-weight:700; padding:2px 8px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
+    .ws-ok   { background:rgba(150,205,181,.2); color:#3a8065; border:1px solid rgba(150,205,181,.4); }
+    .ws-warn { background:rgba(236,216,148,.2); color:#9e8020; border:1px solid rgba(236,216,148,.4); }
+    .ws-red  { background:rgba(240,168,190,.2); color:#c2607e; border:1px solid rgba(240,168,190,.4); }
+    .wash-bag { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:11px 13px; margin-top:8px; }
+    .wb-head { font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
+    .wb-items { display:flex; flex-wrap:wrap; gap:5px; }
+    .wb-chip { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:3px 10px; font-size:10px; color:var(--text); }
+
     /* ── EAT ADD ── */
     .eat-add-wrap { margin-top:4px; margin-bottom:14px; }
     .eat-add-btn { width:100%; background:var(--surface); border:1.5px dashed var(--border); border-radius:18px; padding:13px; font-size:11px; font-weight:700; color:var(--muted); cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:.5px; }
@@ -742,6 +763,7 @@
     <button class="pf-btn" onclick="filterPack('S')" id="pf-s">S</button>
     <button class="pf-btn" onclick="filterPack('A')" id="pf-a">A</button>
   </div>
+  <button class="pack-fit-btn" onclick="switchTab('outfits')">→ Outfits &amp; wash plan</button>
 
   <div class="pack-sec">
     <div class="pack-head ph-workout">💪 Workout Tops</div>
@@ -1044,6 +1066,17 @@
 <!-- ═══════════ OUTFITS ═══════════ -->
 <div id="view-outfits" class="view">
 
+  <button class="pack-fit-btn" onclick="switchTab('pack')">← Pack list</button>
+
+  <p class="sh">WASH &amp; REPEAT</p>
+  <div class="card">
+    <div class="wp-toggle">
+      <button class="wp-btn active" id="wp-s" onclick="setWashPerson('S')">S</button>
+      <button class="wp-btn" id="wp-a" onclick="setWashPerson('A')">A</button>
+    </div>
+    <div id="wash-plan"></div>
+  </div>
+
   <p class="sh">DAY-BY-DAY OUTFITS</p>
   <div class="outfit-table">
 
@@ -1210,6 +1243,8 @@ function switchTab(name) {
   });
   document.querySelectorAll('.view').forEach(v =>
     v.classList.toggle('active', v.id === 'view-' + name));
+  if (name === 'outfits') renderWashPlan();
+  document.querySelector('.content')?.scrollTo(0, 0);
 }
 
 // ── CLOCK + COUNTDOWN ────────────────────────────────────────────────────────
@@ -1237,14 +1272,26 @@ function tc(n) {
   document.getElementById('cl'+n)?.classList.toggle('checked', document.getElementById('cc'+n)?.checked);
   saveBoxes();
 }
+function getQty(n) {
+  const p = packFilter === 'A' ? 'A' : 'S';
+  return packQtys[n]?.[p] || 0;
+}
+function updateQtyDisplay() {
+  document.querySelectorAll('.pack-item[id^="pi"]').forEach(item => {
+    const n = +item.id.replace('pi','');
+    const el = document.getElementById('qn'+n);
+    if (el) el.textContent = getQty(n);
+  });
+}
 function saveBoxes() {
   const s = {};
   for (let i=1;i<=60;i++) s['p'+i] = document.getElementById('c'+i)?.checked||false;
   for (let i=1;i<=14;i++) s['c'+i] = document.getElementById('cc'+i)?.checked||false;
   document.querySelectorAll('.pack-item[id^="pi"]').forEach(item => {
     const n = item.id.replace('pi','');
-    s['o'+n] = item.dataset.owner||'S';
-    s['q'+n] = packQtys[+n]||0;
+    s['o'+n] = item.dataset.owner||'both';
+    s['qS'+n] = packQtys[+n]?.S||0;
+    s['qA'+n] = packQtys[+n]?.A||0;
   });
   if (FB_LIVE) db.ref('seoul26/state').set(s);
   try { localStorage.setItem('seoul26', JSON.stringify(s)); } catch(e) {}
@@ -1267,9 +1314,9 @@ function loadBoxes(s) {
     const owner = s['o'+n]||'both';
     item.dataset.owner = owner;
     if (badge) applyOwnerBadge(badge, owner);
-    packQtys[n] = s['q'+n]||0;
+    packQtys[n] = { S: s['qS'+n]||0, A: s['qA'+n]||0 };
     const qel = document.getElementById('qn'+n);
-    if (qel) qel.textContent = packQtys[n];
+    if (qel) qel.textContent = getQty(n);
   });
 }
 
@@ -1380,6 +1427,7 @@ function filterPack(who) {
     if (who === 'all') { item.style.display = ''; return; }
     item.style.display = (item.dataset.owner === who || item.dataset.owner === 'both') ? '' : 'none';
   });
+  updateQtyDisplay();
 }
 function toggleOwner(n) {
   const item = document.getElementById('pi' + n);
@@ -1400,10 +1448,80 @@ function initPackOwners() {
   });
 }
 function changeQty(n, delta) {
-  packQtys[n] = Math.max(0, (packQtys[n] || 0) + delta);
+  const p = packFilter === 'A' ? 'A' : 'S';
+  if (!packQtys[n]) packQtys[n] = { S: 0, A: 0 };
+  packQtys[n][p] = Math.max(0, (packQtys[n][p] || 0) + delta);
   const el = document.getElementById('qn' + n);
-  if (el) el.textContent = packQtys[n];
+  if (el) el.textContent = packQtys[n][p];
   saveBoxes();
+}
+
+// ── WASH PLAN ────────────────────────────────────────────────────────────────
+let washPerson = 'S';
+
+const PACK_TARGETS = { 1:8, 2:2, 4:6, 5:2, 7:8, 8:8, 9:1, 10:1, 18:5, 19:3, 20:2, 21:10, 22:5, 60:1 };
+const WASH_CATS = [
+  { label:'Workout tops',         sub:'per session',  ids:[1,2],    sessions:8,  stretch:6 },
+  { label:'Workout bottoms',      sub:'per session',  ids:[4,5],    sessions:8,  stretch:6 },
+  { label:'Sports bras',          sub:'per session',  ids:[7],      sessions:8,  stretch:6 },
+  { label:'Trainer socks',        sub:'per session',  ids:[8],      sessions:8,  stretch:6 },
+  { label:'Sleepwear',            sub:'per night',    ids:[9,10],   sessions:9,  stretch:6 },
+  { label:'Day tops',             sub:'per day',      ids:[18],     sessions:10, stretch:6 },
+  { label:'Day bottoms + jeans',  sub:'per day',      ids:[19,60],  sessions:10, stretch:6 },
+  { label:'Underwear',            sub:'per day',      ids:[21],     sessions:10, stretch:6 },
+  { label:'Regular socks',        sub:'per day',      ids:[22],     sessions:10, stretch:6 },
+];
+
+function qtyForPlan(n, p) {
+  const packed = packQtys[n]?.[p] || 0;
+  return packed > 0 ? packed : (PACK_TARGETS[n] || 0);
+}
+
+function setWashPerson(p) {
+  washPerson = p;
+  ['s','a'].forEach(x => document.getElementById('wp-'+x)?.classList.toggle('active', x===p.toLowerCase()));
+  renderWashPlan();
+}
+
+function renderWashPlan() {
+  const el = document.getElementById('wash-plan');
+  if (!el) return;
+  const p = washPerson;
+  // Trip laundry breaks: Wash 1 after Day 2, Wash 2 after Day 8
+  // Stretches: A=D1-D2 (2 days), B=D3-D8 (6 days, longest), C=D9-D10 (2 days)
+  const LONGEST = 6;
+  let rows = '', w1chips = [], w2chips = [];
+
+  WASH_CATS.forEach(cat => {
+    const qty = cat.ids.reduce((s, n) => s + qtyForPlan(n, p), 0);
+    const rewear = Math.max(0, LONGEST - qty);
+    const isTracked = cat.ids.some(n => (packQtys[n]?.[p] || 0) > 0);
+    const label = isTracked ? qty : `${qty}*`;
+    let sc, st;
+    if (rewear === 0) { sc='ws-ok';   st='✓ no repeats'; }
+    else if (rewear <= 2) { sc='ws-warn'; st=`⚠ re-wear ×${rewear}`; }
+    else               { sc='ws-red';  st=`re-wear ×${rewear}`; }
+    rows += `<div class="wash-row">
+      <div class="wash-cat">${cat.label}<div class="wash-cat-sub">${cat.sub}</div></div>
+      <span class="wash-packed">${label}</span>
+      <span class="wash-status ${sc}">${st}</span>
+    </div>`;
+    if (qty > 0) {
+      w1chips.push(`<span class="wb-chip">${cat.label} ×${Math.min(qty,2)}</span>`);
+      w2chips.push(`<span class="wb-chip">${cat.label} ×${Math.min(qty,6)}</span>`);
+    }
+  });
+
+  el.innerHTML = rows +
+    `<div class="wash-bag" style="margin-top:10px;">
+      <div class="wb-head">🧺 Wash 1 · Sat 4 Jul (Day 2 · Four Points)</div>
+      <div class="wb-items">${w1chips.join('')}</div>
+    </div>
+    <div class="wash-bag">
+      <div class="wb-head">🧺 Wash 2 · Fri 10 Jul (Day 8 · Four Points)</div>
+      <div class="wb-items">${w2chips.join('')}</div>
+    </div>
+    <div style="font-size:9px;color:var(--muted2);margin-top:8px;">* planned qty · update pack counts to refine</div>`;
 }
 
 // ── EAT ADD ──────────────────────────────────────────────────────────────────
@@ -1505,6 +1623,7 @@ document.addEventListener('DOMContentLoaded', () => {
   switchTab('itinerary');
   initFoodLogs();
   initPackOwners();
+  renderWashPlan();
   updateClock();
   updateCountdown();
   setInterval(updateClock, 30000);

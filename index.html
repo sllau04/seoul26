@@ -219,7 +219,7 @@
     .pack-item input[type=checkbox] { width:16px; height:16px; flex-shrink:0; margin-top:2px; accent-color:var(--lavender); cursor:pointer; }
     .pack-item label { flex:1; font-size:12px; cursor:pointer; line-height:1.4; }
     .pi-note { font-size:10px; color:var(--muted2); display:block; margin-top:2px; }
-    .pack-item.checked label { text-decoration:line-through; color:var(--muted2); }
+    .pack-item.checked label { color:var(--muted2); }
     .pack-qty { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700; background:var(--surface); color:var(--lavender); padding:2px 7px; border-radius:20px; white-space:nowrap; flex-shrink:0; margin-top:3px; border:1px solid var(--border); }
 
     /* ── EAT ── */
@@ -279,6 +279,38 @@
     .fl-vis-badge { background:rgba(150,205,181,.18); color:#3a8065; border:1px solid rgba(150,205,181,.4); border-radius:20px; padding:3px 9px; font-size:9px; font-weight:700; }
     .fl-vis-rv { font-size:10px; color:var(--muted); }
     .fl-vis-note { font-size:10px; color:var(--muted2); width:100%; font-style:italic; }
+    /* ── PACK FILTER + OWNER + QTY ── */
+    .pack-filter { display:flex; gap:8px; margin-bottom:14px; }
+    .pf-btn { border:1px solid var(--border); border-radius:20px; padding:6px 18px; font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; background:var(--surface); color:var(--muted); cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; }
+    .pf-btn.active { background:var(--text); color:var(--bg); border-color:var(--text); }
+    .pack-controls { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; margin-top:1px; }
+    .pack-owner { font-size:9px; font-weight:700; padding:2px 9px; border-radius:20px; cursor:pointer; user-select:none; border:1px solid; letter-spacing:.5px; }
+    .owner-s { background:rgba(176,160,224,.18); color:#7660c2; border-color:rgba(176,160,224,.45); }
+    .owner-a { background:rgba(150,205,181,.18); color:#4a9e80; border-color:rgba(150,205,181,.45); }
+    .qty-stepper { display:flex; align-items:center; gap:4px; }
+    .qty-btn { width:22px; height:22px; border:1px solid var(--border); border-radius:50%; background:var(--surface); color:var(--text); font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:'Plus Jakarta Sans',sans-serif; flex-shrink:0; padding:0; }
+    .qty-btn:active { background:var(--border); }
+    .qty-num { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:var(--lavender); min-width:16px; text-align:center; }
+    .qty-tgt { font-size:9px; color:var(--muted2); white-space:nowrap; }
+
+    /* ── EAT ADD ── */
+    .eat-add-wrap { margin-top:4px; margin-bottom:14px; }
+    .eat-add-btn { width:100%; background:var(--surface); border:1.5px dashed var(--border); border-radius:18px; padding:13px; font-size:11px; font-weight:700; color:var(--muted); cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:.5px; }
+    .eat-add-form { display:none; background:var(--card); border:1px solid var(--border); border-radius:18px; padding:14px 16px; margin-top:8px; }
+    .eat-add-form.open { display:block; }
+    .eat-fi { width:100%; border:1px solid var(--border); border-radius:12px; padding:8px 11px; font-size:11px; background:var(--surface); color:var(--text); font-family:'Plus Jakarta Sans',sans-serif; box-sizing:border-box; margin-bottom:8px; outline:none; }
+    .eat-fi::placeholder { color:var(--muted2); }
+    .eat-fta { resize:none; }
+    .eat-fi-tag { flex:1; margin-bottom:0; min-width:0; }
+    .eat-badge-row { display:flex; align-items:center; gap:7px; margin-bottom:10px; flex-wrap:wrap; }
+    .eat-badge-lbl { font-size:9px; font-weight:700; letter-spacing:1px; color:var(--muted); flex-shrink:0; }
+    .eat-badge-opts { display:flex; gap:4px; flex-shrink:0; }
+    .eat-badge-opt { width:26px; height:26px; border:2px solid transparent; border-radius:50%; background:var(--surface); cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center; padding:0; }
+    .eat-badge-opt.active { border-color:var(--lavender); }
+    .eat-save-btn { width:100%; background:var(--lavender); border:none; border-radius:20px; padding:10px; font-size:11px; font-weight:700; color:#fff; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; }
+    .eat-del-btn { background:none; border:none; font-size:9px; color:var(--muted2); cursor:pointer; padding:6px 0 0; font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:.3px; display:block; }
+    .eat-del-btn:active { color:#c2607e; }
+
     /* ── EXPORT ── */
     .export-wrap { margin-bottom:14px; }
     .export-btn { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:12px; font-size:11px; font-weight:700; color:var(--muted); cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:.5px; }
@@ -704,116 +736,122 @@
 
   <p class="sh">PACKING LIST</p>
 
+  <div class="pack-filter">
+    <button class="pf-btn active" onclick="filterPack('all')" id="pf-all">ALL</button>
+    <button class="pf-btn" onclick="filterPack('S')" id="pf-s">S</button>
+    <button class="pf-btn" onclick="filterPack('A')" id="pf-a">A</button>
+  </div>
+
   <div class="pack-sec">
     <div class="pack-head ph-workout">💪 Workout Tops</div>
-    <div class="pack-item" id="pi1"><input type="checkbox" id="c1" onchange="tp(1)"><label for="c1">Moisture-wicking tops<span class="pi-note">Fresh each session · 8 sessions total · light colours for 33°C humid heat</span></label><span class="pack-qty">×8</span></div>
-    <div class="pack-item" id="pi2"><input type="checkbox" id="c2" onchange="tp(2)"><label for="c2">Mesh / ventilated tank tops<span class="pi-note">For Andaz gym / pool days when it's really hot</span></label><span class="pack-qty">×2</span></div>
+    <div class="pack-item" id="pi1" data-owner="S"><input type="checkbox" id="c1" onchange="tp(1)"><label for="c1">Moisture-wicking tops<span class="pi-note">Fresh each session · 8 sessions total · light colours for 33°C humid heat</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po1" onclick="toggleOwner(1)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(1,-1)">−</button><span class="qty-num" id="qn1">0</span><button class="qty-btn" onclick="changeQty(1,1)">+</button><span class="qty-tgt">×8</span></div></div></div>
+    <div class="pack-item" id="pi2" data-owner="S"><input type="checkbox" id="c2" onchange="tp(2)"><label for="c2">Mesh / ventilated tank tops<span class="pi-note">For Andaz gym / pool days when it's really hot</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po2" onclick="toggleOwner(2)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(2,-1)">−</button><span class="qty-num" id="qn2">0</span><button class="qty-btn" onclick="changeQty(2,1)">+</button><span class="qty-tgt">×2</span></div></div></div>
   </div>
 
   <div class="pack-sec">
     <div class="pack-head ph-bottoms">🩳 Workout Bottoms</div>
-    <div class="pack-item" id="pi4"><input type="checkbox" id="c4" onchange="tp(4)"><label for="c4">Workout shorts<span class="pi-note">Primary — July heat · fresh each wear</span></label><span class="pack-qty">×6</span></div>
-    <div class="pack-item" id="pi5"><input type="checkbox" id="c5" onchange="tp(5)"><label for="c5">Leggings<span class="pi-note">Pilates / stretch sessions at Andaz · fresh each wear</span></label><span class="pack-qty">×2</span></div>
+    <div class="pack-item" id="pi4" data-owner="S"><input type="checkbox" id="c4" onchange="tp(4)"><label for="c4">Workout shorts<span class="pi-note">Primary — July heat · fresh each wear</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po4" onclick="toggleOwner(4)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(4,-1)">−</button><span class="qty-num" id="qn4">0</span><button class="qty-btn" onclick="changeQty(4,1)">+</button><span class="qty-tgt">×6</span></div></div></div>
+    <div class="pack-item" id="pi5" data-owner="S"><input type="checkbox" id="c5" onchange="tp(5)"><label for="c5">Leggings<span class="pi-note">Pilates / stretch sessions at Andaz · fresh each wear</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po5" onclick="toggleOwner(5)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(5,-1)">−</button><span class="qty-num" id="qn5">0</span><button class="qty-btn" onclick="changeQty(5,1)">+</button><span class="qty-tgt">×2</span></div></div></div>
   </div>
 
   <div class="pack-sec">
     <div class="pack-head ph-bras">🩱 Sports Bras &amp; Socks</div>
-    <div class="pack-item" id="pi7"><input type="checkbox" id="c7" onchange="tp(7)"><label for="c7">Sports bras<span class="pi-note">One fresh per session · no exceptions</span></label><span class="pack-qty">×8</span></div>
-    <div class="pack-item" id="pi8"><input type="checkbox" id="c8" onchange="tp(8)"><label for="c8">Trainer socks — low-cut ankle<span class="pi-note">One fresh pair per session</span></label><span class="pack-qty">×8 pairs</span></div>
+    <div class="pack-item" id="pi7" data-owner="S"><input type="checkbox" id="c7" onchange="tp(7)"><label for="c7">Sports bras<span class="pi-note">One fresh per session · no exceptions</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po7" onclick="toggleOwner(7)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(7,-1)">−</button><span class="qty-num" id="qn7">0</span><button class="qty-btn" onclick="changeQty(7,1)">+</button><span class="qty-tgt">×8</span></div></div></div>
+    <div class="pack-item" id="pi8" data-owner="S"><input type="checkbox" id="c8" onchange="tp(8)"><label for="c8">Trainer socks — low-cut ankle<span class="pi-note">One fresh pair per session</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po8" onclick="toggleOwner(8)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(8,-1)">−</button><span class="qty-num" id="qn8">0</span><button class="qty-btn" onclick="changeQty(8,1)">+</button><span class="qty-tgt">×8 pairs</span></div></div></div>
   </div>
 
   <div class="pack-sec">
     <div class="pack-head ph-sleep">😴 Sleepwear — min 2</div>
-    <div class="pack-item" id="pi9"><input type="checkbox" id="c9" onchange="tp(9)"><label for="c9">Sleepwear set #1<span class="pi-note">Sleep shorts + light top or sleep dress</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi10"><input type="checkbox" id="c10" onchange="tp(10)"><label for="c10">Sleepwear set #2<span class="pi-note">Alternate across 9 nights</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi9" data-owner="S"><input type="checkbox" id="c9" onchange="tp(9)"><label for="c9">Sleepwear set #1<span class="pi-note">Sleep shorts + light top or sleep dress</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po9" onclick="toggleOwner(9)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(9,-1)">−</button><span class="qty-num" id="qn9">0</span><button class="qty-btn" onclick="changeQty(9,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi10" data-owner="S"><input type="checkbox" id="c10" onchange="tp(10)"><label for="c10">Sleepwear set #2<span class="pi-note">Alternate across 9 nights</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po10" onclick="toggleOwner(10)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(10,-1)">−</button><span class="qty-num" id="qn10">0</span><button class="qty-btn" onclick="changeQty(10,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
   </div>
 
   <div class="pack-sec">
     <div class="pack-head ph-gym">🏋️ Gym Extras</div>
-    <div class="pack-item" id="pi11"><input type="checkbox" id="c11" onchange="tp(11)"><label for="c11">Trainers / gym shoes<span class="pi-note">Also walks fine</span></label><span class="pack-qty">×1 pair</span></div>
-    <div class="pack-item" id="pi12"><input type="checkbox" id="c12" onchange="tp(12)"><label for="c12">Resistance bands<span class="pi-note">Essential — Four Points no mat area · golf drills in room</span></label><span class="pack-qty">×1 set</span></div>
+    <div class="pack-item" id="pi11" data-owner="S"><input type="checkbox" id="c11" onchange="tp(11)"><label for="c11">Trainers / gym shoes<span class="pi-note">Also walks fine</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po11" onclick="toggleOwner(11)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(11,-1)">−</button><span class="qty-num" id="qn11">0</span><button class="qty-btn" onclick="changeQty(11,1)">+</button><span class="qty-tgt">×1 pair</span></div></div></div>
+    <div class="pack-item" id="pi12" data-owner="S"><input type="checkbox" id="c12" onchange="tp(12)"><label for="c12">Resistance bands<span class="pi-note">Essential — Four Points no mat area · golf drills in room</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po12" onclick="toggleOwner(12)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(12,-1)">−</button><span class="qty-num" id="qn12">0</span><button class="qty-btn" onclick="changeQty(12,1)">+</button><span class="qty-tgt">×1 set</span></div></div></div>
   </div>
 
   <div class="pack-sec">
     <div class="pack-head ph-clothes">👕 Day Outfits (WFH + Casual)</div>
-    <div class="pack-item" id="pi18"><input type="checkbox" id="c18" onchange="tp(18)"><label for="c18">Casual tops / tees<span class="pi-note">WFH + daytime · 4–5 pieces · breathable</span></label><span class="pack-qty">×5</span></div>
-    <div class="pack-item" id="pi19"><input type="checkbox" id="c19" onchange="tp(19)"><label for="c19">Day bottoms — shorts or light trousers<span class="pi-note">WFH + outside · heat-appropriate</span></label><span class="pack-qty">×3</span></div>
-    <div class="pack-item" id="pi20"><input type="checkbox" id="c20" onchange="tp(20)"><label for="c20">Light cardigan or overshirt<span class="pi-note">Korean AC is aggressive indoors</span></label><span class="pack-qty">×1–2</span></div>
-    <div class="pack-item" id="pi21"><input type="checkbox" id="c21" onchange="tp(21)"><label for="c21">Underwear<span class="pi-note">1 per day + spare</span></label><span class="pack-qty">×10</span></div>
-    <div class="pack-item" id="pi22"><input type="checkbox" id="c22" onchange="tp(22)"><label for="c22">Regular socks</label><span class="pack-qty">×5 pairs</span></div>
-    <div class="pack-item" id="pi54"><input type="checkbox" id="c54" onchange="tp(54)"><label for="c54">Cap / bucket hat<span class="pi-note">Seoul July = 33°C direct sun · essential outdoors</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi55"><input type="checkbox" id="c55" onchange="tp(55)"><label for="c55">Sunglasses<span class="pi-note">UV protection · Seongsu / outdoor days</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi18" data-owner="S"><input type="checkbox" id="c18" onchange="tp(18)"><label for="c18">Casual tops / tees<span class="pi-note">WFH + daytime · 4–5 pieces · breathable</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po18" onclick="toggleOwner(18)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(18,-1)">−</button><span class="qty-num" id="qn18">0</span><button class="qty-btn" onclick="changeQty(18,1)">+</button><span class="qty-tgt">×5</span></div></div></div>
+    <div class="pack-item" id="pi19" data-owner="S"><input type="checkbox" id="c19" onchange="tp(19)"><label for="c19">Day bottoms — shorts or light trousers<span class="pi-note">WFH + outside · heat-appropriate</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po19" onclick="toggleOwner(19)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(19,-1)">−</button><span class="qty-num" id="qn19">0</span><button class="qty-btn" onclick="changeQty(19,1)">+</button><span class="qty-tgt">×3</span></div></div></div>
+    <div class="pack-item" id="pi20" data-owner="S"><input type="checkbox" id="c20" onchange="tp(20)"><label for="c20">Light cardigan or overshirt<span class="pi-note">Korean AC is aggressive indoors</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po20" onclick="toggleOwner(20)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(20,-1)">−</button><span class="qty-num" id="qn20">0</span><button class="qty-btn" onclick="changeQty(20,1)">+</button><span class="qty-tgt">×1–2</span></div></div></div>
+    <div class="pack-item" id="pi21" data-owner="S"><input type="checkbox" id="c21" onchange="tp(21)"><label for="c21">Underwear<span class="pi-note">1 per day + spare</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po21" onclick="toggleOwner(21)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(21,-1)">−</button><span class="qty-num" id="qn21">0</span><button class="qty-btn" onclick="changeQty(21,1)">+</button><span class="qty-tgt">×10</span></div></div></div>
+    <div class="pack-item" id="pi22" data-owner="S"><input type="checkbox" id="c22" onchange="tp(22)"><label for="c22">Regular socks</label><div class="pack-controls"><span class="pack-owner owner-s" id="po22" onclick="toggleOwner(22)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(22,-1)">−</button><span class="qty-num" id="qn22">0</span><button class="qty-btn" onclick="changeQty(22,1)">+</button><span class="qty-tgt">×5 pairs</span></div></div></div>
+    <div class="pack-item" id="pi54" data-owner="S"><input type="checkbox" id="c54" onchange="tp(54)"><label for="c54">Cap / bucket hat<span class="pi-note">Seoul July = 33°C direct sun · essential outdoors</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po54" onclick="toggleOwner(54)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(54,-1)">−</button><span class="qty-num" id="qn54">0</span><button class="qty-btn" onclick="changeQty(54,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi55" data-owner="S"><input type="checkbox" id="c55" onchange="tp(55)"><label for="c55">Sunglasses<span class="pi-note">UV protection · Seongsu / outdoor days</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po55" onclick="toggleOwner(55)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(55,-1)">−</button><span class="qty-num" id="qn55">0</span><button class="qty-btn" onclick="changeQty(55,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
   </div>
 
   <div class="pack-sec">
     <div class="pack-head ph-evening">✨ Evening &amp; Fine Dining</div>
-    <div class="pack-item" id="pi23"><input type="checkbox" id="c23" onchange="tp(23)"><label for="c23">Smart casual outfits<span class="pi-note">Hermès · Seongsu evenings · Soyoung dinner</span></label><span class="pack-qty">×2</span></div>
-    <div class="pack-item" id="pi24"><input type="checkbox" id="c24" onchange="tp(24)"><label for="c24">Fine dining outfit — dressy<span class="pi-note">Gaon or La Yeon · one polished look</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi23" data-owner="S"><input type="checkbox" id="c23" onchange="tp(23)"><label for="c23">Smart casual outfits<span class="pi-note">Hermès · Seongsu evenings · Soyoung dinner</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po23" onclick="toggleOwner(23)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(23,-1)">−</button><span class="qty-num" id="qn23">0</span><button class="qty-btn" onclick="changeQty(23,1)">+</button><span class="qty-tgt">×2</span></div></div></div>
+    <div class="pack-item" id="pi24" data-owner="S"><input type="checkbox" id="c24" onchange="tp(24)"><label for="c24">Fine dining outfit — dressy<span class="pi-note">Gaon or La Yeon · one polished look</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po24" onclick="toggleOwner(24)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(24,-1)">−</button><span class="qty-num" id="qn24">0</span><button class="qty-btn" onclick="changeQty(24,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
   </div>
 
   <div class="pack-sec">
     <div class="pack-head ph-shoes">👟 Shoes</div>
-    <div class="pack-item" id="pi25"><input type="checkbox" id="c25" onchange="tp(25)"><label for="c25">Casual walking shoes / sneakers<span class="pi-note">Seoul is walkable · stylish enough for Seongsu</span></label><span class="pack-qty">×1 pair</span></div>
-    <div class="pack-item" id="pi26"><input type="checkbox" id="c26" onchange="tp(26)"><label for="c26">Smart shoes / heels<span class="pi-note">Fine dining + Hermès visits</span></label><span class="pack-qty">×1 pair</span></div>
-    <div class="pack-item" id="pi27"><input type="checkbox" id="c27" onchange="tp(27)"><label for="c27">Sandals / sliders<span class="pi-note">Hotel + casual · July heat</span></label><span class="pack-qty">×1 pair</span></div>
+    <div class="pack-item" id="pi25" data-owner="S"><input type="checkbox" id="c25" onchange="tp(25)"><label for="c25">Casual walking shoes / sneakers<span class="pi-note">Seoul is walkable · stylish enough for Seongsu</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po25" onclick="toggleOwner(25)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(25,-1)">−</button><span class="qty-num" id="qn25">0</span><button class="qty-btn" onclick="changeQty(25,1)">+</button><span class="qty-tgt">×1 pair</span></div></div></div>
+    <div class="pack-item" id="pi26" data-owner="S"><input type="checkbox" id="c26" onchange="tp(26)"><label for="c26">Smart shoes / heels<span class="pi-note">Fine dining + Hermès visits</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po26" onclick="toggleOwner(26)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(26,-1)">−</button><span class="qty-num" id="qn26">0</span><button class="qty-btn" onclick="changeQty(26,1)">+</button><span class="qty-tgt">×1 pair</span></div></div></div>
+    <div class="pack-item" id="pi27" data-owner="S"><input type="checkbox" id="c27" onchange="tp(27)"><label for="c27">Sandals / sliders<span class="pi-note">Hotel + casual · July heat</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po27" onclick="toggleOwner(27)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(27,-1)">−</button><span class="qty-num" id="qn27">0</span><button class="qty-btn" onclick="changeQty(27,1)">+</button><span class="qty-tgt">×1 pair</span></div></div></div>
   </div>
 
   <div class="pack-sec">
     <div class="pack-head ph-meds">⚠️ Medication — Critical</div>
-    <div class="pack-item" id="pi28"><input type="checkbox" id="c28" onchange="tp(28)"><label for="c28">Hypertension medication<span class="pi-note">Daily · double supply · carry-on only — do NOT check in</span></label><span class="pack-qty">×10+ days</span></div>
-    <div class="pack-item" id="pi29"><input type="checkbox" id="c29" onchange="tp(29)"><label for="c29">Pain relief / ibuprofen</label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi30"><input type="checkbox" id="c30" onchange="tp(30)"><label for="c30">Regular supplements</label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi56"><input type="checkbox" id="c56" onchange="tp(56)"><label for="c56">IM8 sachets<span class="pi-note">Daily nutrition · pre-mix into bottles · don't forget</span></label><span class="pack-qty">×14+</span></div>
-    <div class="pack-item" id="pi57"><input type="checkbox" id="c57" onchange="tp(57)"><label for="c57">Shaker bottle<span class="pi-note">For protein + IM8 · post-workout</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi58"><input type="checkbox" id="c58" onchange="tp(58)"><label for="c58">Protein powder<span class="pi-note">Travel portion in zip-lock · post-workout · 30-day streak support</span></label><span class="pack-qty">×10 serves</span></div>
+    <div class="pack-item" id="pi28" data-owner="S"><input type="checkbox" id="c28" onchange="tp(28)"><label for="c28">Hypertension medication<span class="pi-note">Daily · double supply · carry-on only — do NOT check in</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po28" onclick="toggleOwner(28)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(28,-1)">−</button><span class="qty-num" id="qn28">0</span><button class="qty-btn" onclick="changeQty(28,1)">+</button><span class="qty-tgt">×10+ days</span></div></div></div>
+    <div class="pack-item" id="pi29" data-owner="S"><input type="checkbox" id="c29" onchange="tp(29)"><label for="c29">Pain relief / ibuprofen</label><div class="pack-controls"><span class="pack-owner owner-s" id="po29" onclick="toggleOwner(29)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(29,-1)">−</button><span class="qty-num" id="qn29">0</span><button class="qty-btn" onclick="changeQty(29,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi30" data-owner="S"><input type="checkbox" id="c30" onchange="tp(30)"><label for="c30">Regular supplements</label><div class="pack-controls"><span class="pack-owner owner-s" id="po30" onclick="toggleOwner(30)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(30,-1)">−</button><span class="qty-num" id="qn30">0</span><button class="qty-btn" onclick="changeQty(30,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi56" data-owner="S"><input type="checkbox" id="c56" onchange="tp(56)"><label for="c56">IM8 sachets<span class="pi-note">Daily nutrition · pre-mix into bottles · don't forget</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po56" onclick="toggleOwner(56)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(56,-1)">−</button><span class="qty-num" id="qn56">0</span><button class="qty-btn" onclick="changeQty(56,1)">+</button><span class="qty-tgt">×14+</span></div></div></div>
+    <div class="pack-item" id="pi57" data-owner="S"><input type="checkbox" id="c57" onchange="tp(57)"><label for="c57">Shaker bottle<span class="pi-note">For protein + IM8 · post-workout</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po57" onclick="toggleOwner(57)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(57,-1)">−</button><span class="qty-num" id="qn57">0</span><button class="qty-btn" onclick="changeQty(57,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi58" data-owner="S"><input type="checkbox" id="c58" onchange="tp(58)"><label for="c58">Protein powder<span class="pi-note">Travel portion in zip-lock · post-workout · 30-day streak support</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po58" onclick="toggleOwner(58)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(58,-1)">−</button><span class="qty-num" id="qn58">0</span><button class="qty-btn" onclick="changeQty(58,1)">+</button><span class="qty-tgt">×10 serves</span></div></div></div>
   </div>
 
   <div class="pack-sec">
     <div class="pack-head ph-toiletries">🧴 Toiletries &amp; Skincare</div>
-    <div class="pack-item" id="pi31"><input type="checkbox" id="c31" onchange="tp(31)"><label for="c31">Sunscreen SPF50+<span class="pi-note">Seoul July = 33°C direct sun</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi32"><input type="checkbox" id="c32" onchange="tp(32)"><label for="c32">Skincare routine<span class="pi-note">Or buy at Olive Young on arrival</span></label><span class="pack-qty">travel size</span></div>
-    <div class="pack-item" id="pi33"><input type="checkbox" id="c33" onchange="tp(33)"><label for="c33">Makeup / touch-up kit</label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi34"><input type="checkbox" id="c34" onchange="tp(34)"><label for="c34">Basic toiletries<span class="pi-note">Toothbrush · shampoo · body wash · deodorant · razor</span></label><span class="pack-qty">travel size</span></div>
-    <div class="pack-item" id="pi35"><input type="checkbox" id="c35" onchange="tp(35)"><label for="c35">Feminine hygiene products</label><span class="pack-qty">as needed</span></div>
+    <div class="pack-item" id="pi31" data-owner="S"><input type="checkbox" id="c31" onchange="tp(31)"><label for="c31">Sunscreen SPF50+<span class="pi-note">Seoul July = 33°C direct sun</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po31" onclick="toggleOwner(31)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(31,-1)">−</button><span class="qty-num" id="qn31">0</span><button class="qty-btn" onclick="changeQty(31,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi32" data-owner="S"><input type="checkbox" id="c32" onchange="tp(32)"><label for="c32">Skincare routine<span class="pi-note">Or buy at Olive Young on arrival</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po32" onclick="toggleOwner(32)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(32,-1)">−</button><span class="qty-num" id="qn32">0</span><button class="qty-btn" onclick="changeQty(32,1)">+</button><span class="qty-tgt">travel size</span></div></div></div>
+    <div class="pack-item" id="pi33" data-owner="S"><input type="checkbox" id="c33" onchange="tp(33)"><label for="c33">Makeup / touch-up kit</label><div class="pack-controls"><span class="pack-owner owner-s" id="po33" onclick="toggleOwner(33)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(33,-1)">−</button><span class="qty-num" id="qn33">0</span><button class="qty-btn" onclick="changeQty(33,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi34" data-owner="S"><input type="checkbox" id="c34" onchange="tp(34)"><label for="c34">Basic toiletries<span class="pi-note">Toothbrush · shampoo · body wash · deodorant · razor</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po34" onclick="toggleOwner(34)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(34,-1)">−</button><span class="qty-num" id="qn34">0</span><button class="qty-btn" onclick="changeQty(34,1)">+</button><span class="qty-tgt">travel size</span></div></div></div>
+    <div class="pack-item" id="pi35" data-owner="S"><input type="checkbox" id="c35" onchange="tp(35)"><label for="c35">Feminine hygiene products</label><div class="pack-controls"><span class="pack-owner owner-s" id="po35" onclick="toggleOwner(35)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(35,-1)">−</button><span class="qty-num" id="qn35">0</span><button class="qty-btn" onclick="changeQty(35,1)">+</button><span class="qty-tgt">as needed</span></div></div></div>
   </div>
 
   <div class="pack-sec">
     <div class="pack-head ph-electronics">📱 Electronics &amp; Tech</div>
-    <div class="pack-item" id="pi36"><input type="checkbox" id="c36" onchange="tp(36)"><label for="c36">Laptop + charger<span class="pi-note">Remote work Mon–Fri</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi37"><input type="checkbox" id="c37" onchange="tp(37)"><label for="c37">iPhone charger + cable</label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi38"><input type="checkbox" id="c38" onchange="tp(38)"><label for="c38">Power bank<span class="pi-note">Long days out for Seongsu / shopping</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi39"><input type="checkbox" id="c39" onchange="tp(39)"><label for="c39">Korea plug adapter (Type C/F)<span class="pi-note">Singapore = Type G · Korea = Type C/F</span></label><span class="pack-qty">×1–2</span></div>
-    <div class="pack-item" id="pi40"><input type="checkbox" id="c40" onchange="tp(40)"><label for="c40">DJI Pocket 3 + accessories<span class="pi-note">Content creation · Seongsu · hauls</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi50"><input type="checkbox" id="c50" onchange="tp(50)"><label for="c50">iPad Pro + Apple Pencil<span class="pi-note">WFH · reading · sketching · backup screen</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi51"><input type="checkbox" id="c51" onchange="tp(51)"><label for="c51">Earphones / AirPods<span class="pi-note">Calls · commute · gym</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi52"><input type="checkbox" id="c52" onchange="tp(52)"><label for="c52">Insta360 Luna Ultra + accessories<span class="pi-note">Main camera · lens guard + extra mount</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi53"><input type="checkbox" id="c53" onchange="tp(53)"><label for="c53">Memory cards<span class="pi-note">Insta360 + DJI · format before trip · bring spare</span></label><span class="pack-qty">×2+</span></div>
+    <div class="pack-item" id="pi36" data-owner="S"><input type="checkbox" id="c36" onchange="tp(36)"><label for="c36">Laptop + charger<span class="pi-note">Remote work Mon–Fri</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po36" onclick="toggleOwner(36)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(36,-1)">−</button><span class="qty-num" id="qn36">0</span><button class="qty-btn" onclick="changeQty(36,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi37" data-owner="S"><input type="checkbox" id="c37" onchange="tp(37)"><label for="c37">iPhone charger + cable</label><div class="pack-controls"><span class="pack-owner owner-s" id="po37" onclick="toggleOwner(37)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(37,-1)">−</button><span class="qty-num" id="qn37">0</span><button class="qty-btn" onclick="changeQty(37,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi38" data-owner="S"><input type="checkbox" id="c38" onchange="tp(38)"><label for="c38">Power bank<span class="pi-note">Long days out for Seongsu / shopping</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po38" onclick="toggleOwner(38)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(38,-1)">−</button><span class="qty-num" id="qn38">0</span><button class="qty-btn" onclick="changeQty(38,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi39" data-owner="S"><input type="checkbox" id="c39" onchange="tp(39)"><label for="c39">Korea plug adapter (Type C/F)<span class="pi-note">Singapore = Type G · Korea = Type C/F</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po39" onclick="toggleOwner(39)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(39,-1)">−</button><span class="qty-num" id="qn39">0</span><button class="qty-btn" onclick="changeQty(39,1)">+</button><span class="qty-tgt">×1–2</span></div></div></div>
+    <div class="pack-item" id="pi40" data-owner="S"><input type="checkbox" id="c40" onchange="tp(40)"><label for="c40">DJI Pocket 3 + accessories<span class="pi-note">Content creation · Seongsu · hauls</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po40" onclick="toggleOwner(40)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(40,-1)">−</button><span class="qty-num" id="qn40">0</span><button class="qty-btn" onclick="changeQty(40,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi50" data-owner="S"><input type="checkbox" id="c50" onchange="tp(50)"><label for="c50">iPad Pro + Apple Pencil<span class="pi-note">WFH · reading · sketching · backup screen</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po50" onclick="toggleOwner(50)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(50,-1)">−</button><span class="qty-num" id="qn50">0</span><button class="qty-btn" onclick="changeQty(50,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi51" data-owner="S"><input type="checkbox" id="c51" onchange="tp(51)"><label for="c51">Earphones / AirPods<span class="pi-note">Calls · commute · gym</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po51" onclick="toggleOwner(51)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(51,-1)">−</button><span class="qty-num" id="qn51">0</span><button class="qty-btn" onclick="changeQty(51,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi52" data-owner="S"><input type="checkbox" id="c52" onchange="tp(52)"><label for="c52">Insta360 Luna Ultra + accessories<span class="pi-note">Main camera · lens guard + extra mount</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po52" onclick="toggleOwner(52)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(52,-1)">−</button><span class="qty-num" id="qn52">0</span><button class="qty-btn" onclick="changeQty(52,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi53" data-owner="S"><input type="checkbox" id="c53" onchange="tp(53)"><label for="c53">Memory cards<span class="pi-note">Insta360 + DJI · format before trip · bring spare</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po53" onclick="toggleOwner(53)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(53,-1)">−</button><span class="qty-num" id="qn53">0</span><button class="qty-btn" onclick="changeQty(53,1)">+</button><span class="qty-tgt">×2+</span></div></div></div>
   </div>
 
   <div class="pack-sec">
     <div class="pack-head ph-docs">📄 Documents &amp; Money</div>
-    <div class="pack-item" id="pi41"><input type="checkbox" id="c41" onchange="tp(41)"><label for="c41">Passport<span class="pi-note">Valid · needed for duty free</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi42"><input type="checkbox" id="c42" onchange="tp(42)"><label for="c42">Credit cards<span class="pi-note">Check forex fees · Visa / MC widely accepted</span></label><span class="pack-qty">×2+</span></div>
-    <div class="pack-item" id="pi43"><input type="checkbox" id="c43" onchange="tp(43)"><label for="c43">KRW cash<span class="pi-note">Markets / street food · ~₩200,000 as start</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi44"><input type="checkbox" id="c44" onchange="tp(44)"><label for="c44">Travel insurance details<span class="pi-note">Screenshot policy number + emergency line</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi45"><input type="checkbox" id="c45" onchange="tp(45)"><label for="c45">Hotel confirmations saved offline<span class="pi-note">Four Points + Andaz conf numbers</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi41" data-owner="S"><input type="checkbox" id="c41" onchange="tp(41)"><label for="c41">Passport<span class="pi-note">Valid · needed for duty free</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po41" onclick="toggleOwner(41)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(41,-1)">−</button><span class="qty-num" id="qn41">0</span><button class="qty-btn" onclick="changeQty(41,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi42" data-owner="S"><input type="checkbox" id="c42" onchange="tp(42)"><label for="c42">Credit cards<span class="pi-note">Check forex fees · Visa / MC widely accepted</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po42" onclick="toggleOwner(42)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(42,-1)">−</button><span class="qty-num" id="qn42">0</span><button class="qty-btn" onclick="changeQty(42,1)">+</button><span class="qty-tgt">×2+</span></div></div></div>
+    <div class="pack-item" id="pi43" data-owner="S"><input type="checkbox" id="c43" onchange="tp(43)"><label for="c43">KRW cash<span class="pi-note">Markets / street food · ~₩200,000 as start</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po43" onclick="toggleOwner(43)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(43,-1)">−</button><span class="qty-num" id="qn43">0</span><button class="qty-btn" onclick="changeQty(43,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi44" data-owner="S"><input type="checkbox" id="c44" onchange="tp(44)"><label for="c44">Travel insurance details<span class="pi-note">Screenshot policy number + emergency line</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po44" onclick="toggleOwner(44)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(44,-1)">−</button><span class="qty-num" id="qn44">0</span><button class="qty-btn" onclick="changeQty(44,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi45" data-owner="S"><input type="checkbox" id="c45" onchange="tp(45)"><label for="c45">Hotel confirmations saved offline<span class="pi-note">Four Points + Andaz conf numbers</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po45" onclick="toggleOwner(45)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(45,-1)">−</button><span class="qty-num" id="qn45">0</span><button class="qty-btn" onclick="changeQty(45,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
   </div>
 
   <div class="pack-sec">
     <div class="pack-head ph-misc">🎒 Travel Essentials</div>
-    <div class="pack-item" id="pi46"><input type="checkbox" id="c46" onchange="tp(46)"><label for="c46">Compact umbrella<span class="pi-note">Seoul July = rainy season · essential</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi47"><input type="checkbox" id="c47" onchange="tp(47)"><label for="c47">Tote / foldable shopping bag<span class="pi-note">Olive Young + Lotte Mart haul</span></label><span class="pack-qty">×1–2</span></div>
-    <div class="pack-item" id="pi48"><input type="checkbox" id="c48" onchange="tp(48)"><label for="c48">Foldable extra bag / duffel<span class="pi-note">Shopping overflow on the way home</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi49"><input type="checkbox" id="c49" onchange="tp(49)"><label for="c49">Neck pillow + eye mask<span class="pi-note">SQ600 departs 08:10 · early morning flight</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi59"><input type="checkbox" id="c59" onchange="tp(59)"><label for="c59">Book to read<span class="pi-note">Flight + hotel downtime · physical or loaded on iPad</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi46" data-owner="S"><input type="checkbox" id="c46" onchange="tp(46)"><label for="c46">Compact umbrella<span class="pi-note">Seoul July = rainy season · essential</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po46" onclick="toggleOwner(46)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(46,-1)">−</button><span class="qty-num" id="qn46">0</span><button class="qty-btn" onclick="changeQty(46,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi47" data-owner="S"><input type="checkbox" id="c47" onchange="tp(47)"><label for="c47">Tote / foldable shopping bag<span class="pi-note">Olive Young + Lotte Mart haul</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po47" onclick="toggleOwner(47)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(47,-1)">−</button><span class="qty-num" id="qn47">0</span><button class="qty-btn" onclick="changeQty(47,1)">+</button><span class="qty-tgt">×1–2</span></div></div></div>
+    <div class="pack-item" id="pi48" data-owner="S"><input type="checkbox" id="c48" onchange="tp(48)"><label for="c48">Foldable extra bag / duffel<span class="pi-note">Shopping overflow on the way home</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po48" onclick="toggleOwner(48)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(48,-1)">−</button><span class="qty-num" id="qn48">0</span><button class="qty-btn" onclick="changeQty(48,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi49" data-owner="S"><input type="checkbox" id="c49" onchange="tp(49)"><label for="c49">Neck pillow + eye mask<span class="pi-note">SQ600 departs 08:10 · early morning flight</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po49" onclick="toggleOwner(49)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(49,-1)">−</button><span class="qty-num" id="qn49">0</span><button class="qty-btn" onclick="changeQty(49,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi59" data-owner="S"><input type="checkbox" id="c59" onchange="tp(59)"><label for="c59">Book to read<span class="pi-note">Flight + hotel downtime · physical or loaded on iPad</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po59" onclick="toggleOwner(59)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(59,-1)">−</button><span class="qty-num" id="qn59">0</span><button class="qty-btn" onclick="changeQty(59,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
   </div>
 
   <div class="pack-sec">
     <div class="pack-head ph-laundry">🧺 Laundry &amp; Packing Kit</div>
-    <div class="pack-item" id="pi14"><input type="checkbox" id="c14" onchange="tp(14)"><label for="c14">Travel laundry sachets<span class="pi-note">Hand-wash option if hotel laundry slow</span></label><span class="pack-qty">×4</span></div>
-    <div class="pack-item" id="pi15"><input type="checkbox" id="c15" onchange="tp(15)"><label for="c15">Mesh laundry bag</label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi16"><input type="checkbox" id="c16" onchange="tp(16)"><label for="c16">Box cutter<span class="pi-note">⚠ CHECKED LUGGAGE ONLY — not permitted in carry-on · for opening snack boxes at home</span></label><span class="pack-qty">×1</span></div>
-    <div class="pack-item" id="pi17"><input type="checkbox" id="c17" onchange="tp(17)"><label for="c17">Packing tape<span class="pi-note">Re-seal boxes · reinforce snack bags in luggage</span></label><span class="pack-qty">×1</span></div>
+    <div class="pack-item" id="pi14" data-owner="S"><input type="checkbox" id="c14" onchange="tp(14)"><label for="c14">Travel laundry sachets<span class="pi-note">Hand-wash option if hotel laundry slow</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po14" onclick="toggleOwner(14)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(14,-1)">−</button><span class="qty-num" id="qn14">0</span><button class="qty-btn" onclick="changeQty(14,1)">+</button><span class="qty-tgt">×4</span></div></div></div>
+    <div class="pack-item" id="pi15" data-owner="S"><input type="checkbox" id="c15" onchange="tp(15)"><label for="c15">Mesh laundry bag</label><div class="pack-controls"><span class="pack-owner owner-s" id="po15" onclick="toggleOwner(15)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(15,-1)">−</button><span class="qty-num" id="qn15">0</span><button class="qty-btn" onclick="changeQty(15,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi16" data-owner="S"><input type="checkbox" id="c16" onchange="tp(16)"><label for="c16">Box cutter<span class="pi-note">⚠ CHECKED LUGGAGE ONLY — not permitted in carry-on · for opening snack boxes at home</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po16" onclick="toggleOwner(16)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(16,-1)">−</button><span class="qty-num" id="qn16">0</span><button class="qty-btn" onclick="changeQty(16,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
+    <div class="pack-item" id="pi17" data-owner="S"><input type="checkbox" id="c17" onchange="tp(17)"><label for="c17">Packing tape<span class="pi-note">Re-seal boxes · reinforce snack bags in luggage</span></label><div class="pack-controls"><span class="pack-owner owner-s" id="po17" onclick="toggleOwner(17)">S</span><div class="qty-stepper"><button class="qty-btn" onclick="changeQty(17,-1)">−</button><span class="qty-num" id="qn17">0</span><button class="qty-btn" onclick="changeQty(17,1)">+</button><span class="qty-tgt">×1</span></div></div></div>
   </div>
 
 </div><!-- /pack -->
@@ -916,6 +954,32 @@
     <div class="eat-meta">Temple cuisine · Insadong</div>
     <div class="eat-note">Buddhist temple food — vegetarian, no garlic/onion. Special and memorable for a long catch-up.</div>
     <div class="eat-book">📅 Book ahead</div>
+  </div>
+
+  <p class="sh" id="eat-custom-sh" style="display:none">MY PICKS</p>
+  <div id="eat-custom"></div>
+
+  <div class="eat-add-wrap">
+    <button class="eat-add-btn" id="eat-add-toggle" onclick="toggleEatForm()">+ Add restaurant</button>
+    <div class="eat-add-form" id="eat-add-form">
+      <input class="eat-fi" type="text" id="enf-name" placeholder="Restaurant name *">
+      <input class="eat-fi" type="text" id="enf-area" placeholder="Area / rating (e.g. Gangnam · ⭐ 4.8)">
+      <textarea class="eat-fi eat-fta" id="enf-note" placeholder="Notes…" rows="2"></textarea>
+      <input class="eat-fi" type="text" id="enf-book" placeholder="Booking note (optional)">
+      <div class="eat-badge-row">
+        <span class="eat-badge-lbl">TAG</span>
+        <div class="eat-badge-opts">
+          <button class="eat-badge-opt active" data-badge="b-mint" onclick="selectBadge(this)">🟢</button>
+          <button class="eat-badge-opt" data-badge="b-peach" onclick="selectBadge(this)">🟠</button>
+          <button class="eat-badge-opt" data-badge="b-sky" onclick="selectBadge(this)">🔵</button>
+          <button class="eat-badge-opt" data-badge="b-pink" onclick="selectBadge(this)">🩷</button>
+          <button class="eat-badge-opt" data-badge="b-butter" onclick="selectBadge(this)">🟡</button>
+          <button class="eat-badge-opt" data-badge="b-lav" onclick="selectBadge(this)">💜</button>
+        </div>
+        <input class="eat-fi eat-fi-tag" type="text" id="enf-tag" placeholder="Tag label">
+      </div>
+      <button class="eat-save-btn" onclick="saveEatEntry()">Add to list</button>
+    </div>
   </div>
 
 </div><!-- /eat -->
@@ -1131,6 +1195,8 @@ const FB_CONFIG = {
 const FB_LIVE = !FB_CONFIG.apiKey.startsWith('PASTE');
 let db;
 if (FB_LIVE) { firebase.initializeApp(FB_CONFIG); db = firebase.database(); }
+let packFilter = 'all';
+const packQtys = {};
 
 // ── TABS ─────────────────────────────────────────────────────────────────────
 function switchTab(name) {
@@ -1173,6 +1239,11 @@ function saveBoxes() {
   const s = {};
   for (let i=1;i<=59;i++) s['p'+i] = document.getElementById('c'+i)?.checked||false;
   for (let i=1;i<=14;i++) s['c'+i] = document.getElementById('cc'+i)?.checked||false;
+  document.querySelectorAll('.pack-item[id^="pi"]').forEach(item => {
+    const n = item.id.replace('pi','');
+    s['o'+n] = item.dataset.owner||'S';
+    s['q'+n] = packQtys[+n]||0;
+  });
   if (FB_LIVE) db.ref('seoul26/state').set(s);
   try { localStorage.setItem('seoul26', JSON.stringify(s)); } catch(e) {}
 }
@@ -1188,6 +1259,16 @@ function loadBoxes(s) {
     cb.checked = !!s['c'+i];
     document.getElementById('cl'+i)?.classList.toggle('checked', !!s['c'+i]);
   }
+  document.querySelectorAll('.pack-item[id^="pi"]').forEach(item => {
+    const n = +item.id.replace('pi','');
+    const badge = document.getElementById('po'+n);
+    const owner = s['o'+n]||'S';
+    item.dataset.owner = owner;
+    if (badge) { badge.textContent = owner; badge.className = 'pack-owner '+(owner==='S'?'owner-s':'owner-a'); }
+    packQtys[n] = s['q'+n]||0;
+    const qel = document.getElementById('qn'+n);
+    if (qel) qel.textContent = packQtys[n];
+  });
 }
 
 // ── FOOD LOGS ────────────────────────────────────────────────────────────────
@@ -1284,6 +1365,108 @@ function renderVisited(rid, log) {
   document.getElementById('flt-'+rid).textContent = '✏️ Edit visit';
 }
 
+// ── PACK FILTER + OWNER + QTY ────────────────────────────────────────────────
+function filterPack(who) {
+  packFilter = who;
+  document.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('pf-' + (who === 'all' ? 'all' : who.toLowerCase()))?.classList.add('active');
+  document.querySelectorAll('.pack-item').forEach(item => {
+    if (who === 'all') { item.style.display = ''; return; }
+    item.style.display = (item.dataset.owner === who) ? '' : 'none';
+  });
+}
+function toggleOwner(n) {
+  const item = document.getElementById('pi' + n);
+  const badge = document.getElementById('po' + n);
+  if (!item || !badge) return;
+  const next = (item.dataset.owner || 'S') === 'S' ? 'A' : 'S';
+  item.dataset.owner = next;
+  badge.textContent = next;
+  badge.className = 'pack-owner ' + (next === 'S' ? 'owner-s' : 'owner-a');
+  if (packFilter !== 'all') item.style.display = next === packFilter ? '' : 'none';
+  saveBoxes();
+}
+function changeQty(n, delta) {
+  packQtys[n] = Math.max(0, (packQtys[n] || 0) + delta);
+  const el = document.getElementById('qn' + n);
+  if (el) el.textContent = packQtys[n];
+  saveBoxes();
+}
+
+// ── EAT ADD ──────────────────────────────────────────────────────────────────
+let selectedBadge = 'b-mint';
+
+function toggleEatForm() {
+  const form = document.getElementById('eat-add-form');
+  const btn = document.getElementById('eat-add-toggle');
+  const open = form.classList.toggle('open');
+  btn.textContent = open ? '✕ Cancel' : '+ Add restaurant';
+}
+function selectBadge(el) {
+  document.querySelectorAll('.eat-badge-opt').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedBadge = el.dataset.badge;
+}
+function saveEatEntry() {
+  const name = document.getElementById('enf-name')?.value.trim();
+  if (!name) {
+    const btn = document.querySelector('.eat-save-btn');
+    btn.textContent = '⚠ Name required'; setTimeout(() => btn.textContent = 'Add to list', 1500); return;
+  }
+  const entry = {
+    name,
+    area:  document.getElementById('enf-area')?.value.trim()||'',
+    note:  document.getElementById('enf-note')?.value.trim()||'',
+    book:  document.getElementById('enf-book')?.value.trim()||'',
+    tag:   document.getElementById('enf-tag')?.value.trim()||'',
+    badge: selectedBadge,
+    id: 'ce-' + Date.now()
+  };
+  if (FB_LIVE) db.ref('seoul26/custom_eats/' + entry.id).set(entry);
+  try { const c = JSON.parse(localStorage.getItem('seoul26_eats')||'{}'); c[entry.id]=entry; localStorage.setItem('seoul26_eats', JSON.stringify(c)); } catch(e) {}
+  renderEatEntry(entry);
+  ['enf-name','enf-area','enf-note','enf-book','enf-tag'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  toggleEatForm();
+}
+function renderEatEntry(entry) {
+  document.getElementById('eat-custom-sh').style.display = '';
+  const card = document.createElement('div');
+  card.className = 'eat-card'; card.id = entry.id;
+  card.innerHTML = `
+    <div class="eat-top">
+      <div class="eat-name">${entry.name}</div>
+      ${entry.tag ? `<span class="badge ${entry.badge}">${entry.tag}</span>` : ''}
+    </div>
+    ${entry.area ? `<div class="eat-meta">${entry.area}</div>` : ''}
+    ${entry.note ? `<div class="eat-note">${entry.note}</div>` : ''}
+    ${entry.book ? `<div class="eat-book">📅 ${entry.book}</div>` : ''}
+    <button class="eat-del-btn" onclick="deleteEatEntry('${entry.id}')">✕ Remove</button>`;
+  const rid = slugify(entry.name);
+  card.dataset.rid = rid;
+  const fl = document.createElement('div');
+  fl.className = 'food-log';
+  fl.innerHTML = `
+    <div class="fl-visited" id="flv-${rid}" style="display:none"></div>
+    <button class="fl-toggle" id="flt-${rid}" onclick="toggleLog('${rid}')">📝 Log visit</button>
+    <div class="fl-form" id="flf-${rid}">
+      <div class="fl-row">
+        <select class="fl-select" id="fld-${rid}"><option value="">Date</option>${TRIP_DATES.map(d=>`<option value="${d.v}">${d.l}</option>`).join('')}</select>
+        <select class="fl-select" id="flm-${rid}"><option value="">Meal</option>${MEALS.map(m=>`<option value="${m.toLowerCase()}">${m}</option>`).join('')}</select>
+      </div>
+      <div class="fl-rv-row"><span class="fl-rv-lbl">Visit again?</span><div class="fl-rv-btns">${['yes','no','maybe'].map(v=>`<button class="fl-rv" id="flr-${rid}-${v}" onclick="setRv('${rid}','${v}')">${v[0].toUpperCase()+v.slice(1)}</button>`).join('')}</div></div>
+      <textarea class="fl-notes" id="fln-${rid}" placeholder="Notes…" rows="2"></textarea>
+      <button class="fl-save-btn" onclick="saveLog('${rid}')">Save visit</button>
+    </div>`;
+  card.appendChild(fl);
+  document.getElementById('eat-custom').appendChild(card);
+}
+function deleteEatEntry(id) {
+  document.getElementById(id)?.remove();
+  if (FB_LIVE) db.ref('seoul26/custom_eats/' + id).remove();
+  try { const c=JSON.parse(localStorage.getItem('seoul26_eats')||'{}'); delete c[id]; localStorage.setItem('seoul26_eats',JSON.stringify(c)); } catch(e) {}
+  if (!document.getElementById('eat-custom').children.length) document.getElementById('eat-custom-sh').style.display = 'none';
+}
+
 // ── EXPORT ───────────────────────────────────────────────────────────────────
 async function exportData() {
   const data = { exported: new Date().toISOString(), pack: {}, checklist: {}, food_logs: {} };
@@ -1319,11 +1502,23 @@ document.addEventListener('DOMContentLoaded', () => {
       const logs = snap.val()||{};
       Object.entries(logs).forEach(([rid, log]) => renderVisited(rid, log));
     });
+    db.ref('seoul26/custom_eats').once('value', snap => {
+      const entries = snap.val()||{};
+      Object.values(entries).forEach(e => renderEatEntry(e));
+      db.ref('seoul26/food_logs').once('value', snap2 => {
+        const logs = snap2.val()||{};
+        Object.entries(logs).forEach(([rid, log]) => renderVisited(rid, log));
+      });
+    });
   } else {
     try { loadBoxes(JSON.parse(localStorage.getItem('seoul26')||'{}')); } catch(e) {}
     try {
       const logs = JSON.parse(localStorage.getItem('seoul26_logs')||'{}');
       Object.entries(logs).forEach(([rid, log]) => renderVisited(rid, log));
+    } catch(e) {}
+    try {
+      const entries = JSON.parse(localStorage.getItem('seoul26_eats')||'{}');
+      Object.values(entries).forEach(e => renderEatEntry(e));
     } catch(e) {}
   }
 });
